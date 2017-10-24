@@ -1,0 +1,38 @@
+---
+
+- hosts: all
+  gather_facts: yes
+  tasks:
+    - name: "** aws prep ** check for epel repo"
+      stat: path=/etc/yum.repos.d/epel.repo
+      register: epel_repo_file
+      tags: prep-aws
+
+    - name: "** aws prep ** install EPEL" 
+      shell: yum install https://dl.fedoraproject.org/pub/epel/epel-release-latest-{{ ansible_distribution_major_version }}.noarch.rpm -y
+      when: not epel_repo_file.stat.exists
+      tags: prep-aws
+
+#    - name: "** aws prep ** put selinux in permissive state"
+#      shell: setenforce 0
+#      tags: prep-aws
+    
+    - name: "** aws prep ** install ansible"
+      yum: name={{ item }} state=latest
+      with_items:
+        - ansible1.9
+      tags: prep-aws
+
+    - name: "** aws prep ** disable selinux"
+      selinux: state=disabled
+      tags: prep-aws
+
+    - name: "** aws prep ** copy /etc/hosts file to machines"
+      copy: src=etc.hosts dest=/etc/hosts owner=root group=root mode=0644
+      tags: prep-aws-ssh
+
+    - name: "** aws prep ** set hostname to fqdn" 
+      shell: hostname {{ ansible_fqdn }}
+      tags: prep-aws
+    
+      

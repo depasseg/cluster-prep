@@ -1,0 +1,76 @@
+---
+
+- hosts: all
+
+  sudo: yes
+
+  vars:
+    users:
+      mikeg:
+        state: present
+        group: support-cs
+        key: "ssh-rsa AAAAB3NzaC1yc2EAAAADAxE2eCdwA4dygOr4VxORAX mikeg@somewhere.com"
+      paul:
+        state: present
+        group: support-cs
+        key: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDhJBqr7nmN15 paul@somewhere.com"
+      josh:
+        state: present
+        group: support-cs
+        key: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQClVmWkrh0kqL josh@somewhere.com"
+      helen:
+        state: present
+        group: support-cs
+        key: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDTjetUelOlD8 helen@somewhere.com"
+      brendan:
+        state: present
+        group: support-cs
+        key: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCq+jyePQFjiD brendan@somewhere.com"
+
+  tasks:
+
+  - name: Make sure we have a 'support-cs' group
+    group:
+      name: support-cs
+      state: present
+
+  - name: Allow 'support-cs' group to have passwordless sudo
+    lineinfile:
+      dest: /etc/sudoers
+      state: present
+      regexp: '^%support-cs'
+      line: '%support-cs ALL=(ALL) NOPASSWD: ALL'
+      validate: 'visudo -cf %s'
+
+
+  - name: Adding/removing user
+    user: 
+      name: "{{ item.key }}" 
+      state: "{{ item.value.state }}"
+      group: "{{ item.value.group }}"
+    with_dict: "{{ users }}"
+
+#  - name: Check if user exists
+#    getent:
+#      database: passwd
+#      key: rootty
+#
+#  - debug:
+#      var: getent_passwd
+
+#   - name Get list of users
+#     command: cat /etc/passwd | awk -F ":" {'print $1'}
+#     register: user_list
+
+#  - name: Get list of accounts
+#    shell: "/bin/cat /etc/passwd | awk -F ":" {'print $1'}"
+
+
+  - name: Updating user public keys
+    authorized_key:
+      user: "{{ item.key }}"
+      state: "{{ item.value.state }}"
+      key: "{{ item.value.key }}"
+#    when "{{ item.value.state }}": == present
+#     when: "'{{ item.key }}' in user_list.stdout"
+    with_dict: "{{ users }}"

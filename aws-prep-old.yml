@@ -1,0 +1,73 @@
+---
+
+- hosts: all
+  gather_facts: yes
+  tasks:
+    - name: "** aws prep ** check for epel repo"
+      stat: path=/etc/yum.repos.d/epel.repo
+      register: epel_repo_file
+      tags: prep-aws
+
+    - name: "** aws prep ** install EPEL" 
+      shell: yum install https://dl.fedoraproject.org/pub/epel/epel-release-latest-{{ ansible_distribution_major_version }}.noarch.rpm -y
+      when: not epel_repo_file.stat.exists
+      tags: prep-aws
+
+#    - name: "** aws prep ** put selinux in permissive state"
+#      shell: setenforce 0
+#      tags: prep-aws
+    
+    - name: "** aws prep ** install ansible"
+      yum: name={{ item }} state=latest
+      with_items:
+        - ansible
+        - xfsprogs
+      tags: prep-aws
+
+    - name: "** aws prep ** disable selinux"
+      selinux: state=disabled
+      tags: prep-aws
+
+    - name: "** aws prep ** copy keys to machines for ssh-ing around"
+      copy: src={{ lookup('env','HOME') }}/.ssh/{{ item.name }} 
+            dest=/root/.ssh/{{ item.name }} 
+            owner=root
+            group=root
+            mode={{ item.mode }} 
+      with_items:
+       - { name: 'id_rsa', mode: '0600' }
+       - { name: 'id_rsa.pub', mode: '0644' }
+      sudo: false
+      tags: prep-aws-ssh
+
+    - name: "** aws prep ** copy /etc/hosts file to machines"
+      copy: src=etc.hosts dest=/etc/hosts owner=root group=root mode=0644
+      tags: prep-aws-ssh
+      
+    - name: "** aws prep ** set hostname to fqdn" 
+      shell: hostname {{ ansible_fqdn }}
+      tags: prep-aws
+    
+    - name: "** aws prep ** format drives"
+      filesystem: fstype=xfs dev=/dev/{{ item }}
+      with_items:
+       - xvdb
+      tags: prep-aws-filesystem
+           
+    - name: "** aws prep ** mount drives"
+      mount: fstype=xfs src={{ item.dev }} path={{ item.dest }} state=mounted opts=defaults,noatime passno=0
+      with_items:
+       - { dev: '/dev/xvdb', dest: '/data01' }
+       - { dev: '/dev/xvdc', dest: '/data02' }
+       - { dev: '/dev/xvdd', dest: '/data03' }
+       - { dev: '/dev/xvde', dest: '/data04' }
+       - { dev: '/dev/xvdf', dest: '/data05' }
+       - { dev: '/dev/xvdg', dest: '/data06' }
+       - { dev: '/dev/xvdh', dest: '/data07' }
+       - { dev: '/dev/xvdi', dest: '/data08' }
+       - { dev: '/dev/xvdj', dest: '/data09' }
+       - { dev: '/dev/xvdk', dest: '/data10' }
+       - { dev: '/dev/xvdl', dest: '/data11' }
+       - { dev: '/dev/xvdm', dest: '/data12' }
+      tags: prep-aws-filesystem
+

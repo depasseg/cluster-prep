@@ -1,0 +1,10 @@
+127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
+::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
+10.99.105.42 r1.cm.cluster r1
+10.99.105.43 r2.cm.cluster r2
+10.99.105.44 r3.cm.cluster r3
+10.99.105.45 r4.cm.cluster r4
+10.99.105.46 r5.cm.cluster r5
+10.99.105.47 r6.cm.cluster r6
+10.99.105.48 r7.cm.cluster r7
+10.99.105.49 r8.cm.cluster r8

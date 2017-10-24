@@ -1,0 +1,124 @@
+---
+
+- hosts: all
+
+  sudo: yes
+
+
+  gather_facts: yes
+
+
+  vars:
+    users:
+      root:
+        state: present
+        group: root
+        key: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDsevMuW38QEFhELve0n6M/bsuNMhysgJElUUfwzYrphkhZAXtDOZwNDT/94cHmwvxgRfcbUHuwnIP51G3kH7nqQG/ST4rqwOpiLzrYBfaKMawtElQe2cVUWRA1eb6MHBpdD6DZ0rNgDLLD3VCZ82VW/5AD1kkkaBZzB40WkbPk7/82szkIndM2m1kaKFH5FsuYORXTJB41tio7YKRwePIaBdS9y3p4CIQ84kWKAaldhiBX6nygI4pNDQKzcJLtgLpgidNt63bE2BPzXIbA8PLvsZW8AdZVVgvVCC9k92J9O/k8PK4gJQgDtCOZ1iGa3D+KPIqo0kXWF/gVUv7ncIt1 paul@ip-10-172-1-36.us-west-2.compute.internal"
+
+  tasks:
+    - name: "** aws prep ** check for epel repo"
+      stat: path=/etc/yum.repos.d/epel.repo
+      register: epel_repo_file
+      tags: prep-aws
+
+    - name: "** aws prep ** install EPEL" 
+      shell: yum install https://dl.fedoraproject.org/pub/epel/epel-release-latest-{{ ansible_distribution_major_version }}.noarch.rpm -y
+      when: not epel_repo_file.stat.exists
+      tags: prep-aws
+
+#    - name: "** aws prep ** put selinux in permissive state"
+#      shell: setenforce 0
+#      tags: prep-aws
+
+    - name: "** ssh prep ** check for and create .ssh folder"
+      file:
+        path: /root/.ssh
+        state: directory
+        mode:  0700
+      tags: prep-aws
+    
+    - name: "** aws prep ** install ansible"
+      yum: name={{ item }} state=latest
+      with_items:
+        - ansible
+        - xfsprogs
+      tags: prep-aws
+
+    - name: "** aws prep ** disable selinux"
+      selinux: state=disabled
+      tags: prep-aws
+
+
+    - name: "** aws prep ** copy keys to machines for ssh-ing around - root"
+      copy: src=temp-ssh-keys/{{ item.name }}
+            dest=/root/.ssh/{{ item.name }}
+            owner=root
+            group=root
+            mode={{ item.mode }}
+      with_items:
+       - { name: 'id_rsa', mode: '0600' }
+       - { name: 'id_rsa.pub', mode: '0644' }
+      #sudo: false
+      become: true
+      tags: prep-aws-ssh
+
+    - name: Updating user public keys
+      authorized_key:
+        user: "{{ item.key }}"
+        state: "{{ item.value.state }}"
+        key: "{{ item.value.key }}"
+      with_dict: "{{ users }}"
+
+
+    - name: "** aws prep ** copy /etc/hosts file to machines"
+      copy: src=etc.hosts dest=/etc/hosts owner=root group=root mode=0644
+      tags: prep-aws-ssh
+      
+#    - name: "** aws prep ** set hostname to fqdn" 
+#      shell: hostname {{ ansible_fqdn }}
+#      tags: prep-aws
+ 
+    - name: Ensure hostname set
+      hostname: name={{ inventory_hostname }}
+      when: not inventory_hostname|match('(\d{1,3}\.){3}\d{1,3}')
+
+    - name: Ensure hostname is in /etc/hosts
+      lineinfile:
+        dest=/etc/hosts
+        regexp="^{{ ansible_default_ipv4.address }}.+$"
+        line="{{ ansible_default_ipv4.address }} {{ ansible_fqdn }} {{ ansible_hostname }}"
+        
+    - name: "** aws prep ** format drives"
+      filesystem: fstype=xfs dev=/dev/{{ item }}
+      with_items:
+       - sdb
+       - sdc
+       - sdd
+       - sde
+       - sdf
+       - sdg
+       - sdh
+       - sdi
+       - sdj
+       - sdk
+       - sdl
+       - sdm
+      tags: prep-aws-filesystem
+           
+    - name: "** aws prep ** mount drives"
+      mount: fstype=xfs src={{ item.dev }} name={{ item.dest }} state=mounted opts=defaults,noatime passno=0
+      with_items:
+      with_items:
+       - { dev: '/dev/sdb', dest: '/data01' }
+       - { dev: '/dev/sdc', dest: '/data02' }
+       - { dev: '/dev/sdd', dest: '/data03' }
+       - { dev: '/dev/sde', dest: '/data04' }
+       - { dev: '/dev/sdf', dest: '/data05' }
+       - { dev: '/dev/sdg', dest: '/data06' }
+       - { dev: '/dev/sdh', dest: '/data07' }
+       - { dev: '/dev/sdi', dest: '/data08' }
+       - { dev: '/dev/sdj', dest: '/data09' }
+       - { dev: '/dev/sdk', dest: '/data10' }
+       - { dev: '/dev/sdl', dest: '/data11' }
+       - { dev: '/dev/sdm', dest: '/data12' }
+      tags: prep-aws-filesystem

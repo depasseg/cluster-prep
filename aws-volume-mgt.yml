@@ -1,0 +1,13 @@
+---
+
+- hosts: localhost
+  connection: local
+  gather_facts: False
+
+  tasks:
+
+  # Remove a volume (work in process - add ability to point to file with volume list)
+  - ec2_vol:
+      id: vol-0152ca924f8bba659
+      state: absent
+      region: us-west-2
