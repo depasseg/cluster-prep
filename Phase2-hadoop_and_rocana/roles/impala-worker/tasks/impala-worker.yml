@@ -1,0 +1,22 @@
+---
+
+- name: "** impala worker ** clean repo data prior to package installation"
+  command: yum clean all
+  
+- name: "** impala worker ** install required packages"
+  yum: name={{ item }} state=latest
+  with_items:
+    - impala
+    - impala-server
+    - bigtop-utils
+  tags: install-impala-worker
+
+- name: "** impala worker ** deploy impala config template"
+  template: src=etc-default.impala-worker.j2 dest=/etc/default/impala owner=root group=root mode=0644
+  tags: install-impala-worker
+
+- name: "** impala worker ** (re)start impala worker daemon"
+  service: name=impala-server state=restarted 
+  tags: install-impala-worker
+
+

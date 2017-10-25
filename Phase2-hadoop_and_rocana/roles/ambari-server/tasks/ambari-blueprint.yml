@@ -1,0 +1,118 @@
+---
+#
+# Ambari Blueprint section
+#
+
+- name: "** ambari blueprint ** create blueprint directory"
+  file: path=/root/rocana-blueprint owner=root group=root mode=0755 state=directory
+  tags:
+    - setup-ambari-blueprints
+    - hadrian-hdp
+
+- name: "** ambari blueprint ** copy hadrian-hdp to ambari server"
+  copy: src=configs/{{ cluster_name }}/hadrian-hdp/ dest=/root/rocana-blueprint owner=root group=root
+  tags:
+    - setup-ambari-blueprints
+    - hadrian-hdp
+
+- name: "** ambari blueprint ** chmod CreateHdpCluster.py to executable"
+  file: path=/root/rocana-blueprint/{{ item }} owner=root group=root mode=0755 state=file
+  with_items:
+    - CreateHdpCluster.py
+    - ParseResponse.py
+  tags:
+    - setup-ambari-blueprints
+    - hadrian-hdp
+
+- name: "** ambari blueprint ** copy blueprint and create-cluster.json to /root/rocana-blueprint"
+  template: src={{ item.src }} dest=/root/rocana-blueprint/{{ item.dest }}
+  with_items:
+    - { src: "configs/{{ cluster_name }}/hadrian-hdp/cluster-specs.ini", dest: "cluster-specs.ini" }
+    - { src: "configs/{{ cluster_name }}/hadrian-hdp/hadrian-hdp.ini", dest: "hadrian-hdp.ini" }
+    - { src: "configs/{{ cluster_name }}/hadrian-hdp/hdfs-ha.ini", dest: "hdfs-ha.ini" }
+    - { src: "configs/{{ cluster_name }}/hadrian-hdp/service_configs/hive-site.ini", dest: "/service_configs/hive-site.ini" }
+    - { src: "hdp-repo-payload.json.j2", dest: "hdp-repo-payload.json" }
+    - { src: "hdp-utils-repo-payload.json.j2", dest: "hdp-utils-repo-payload.json" }
+  tags:
+    - setup-ambari-blueprints
+    - hadrian-hdp
+
+- name: "** ambari blueprint ** copy script for posting blueprint to ambari"
+  copy: src=post-to-ambari.sh dest=/root/rocana-blueprint/post-to-ambari.sh owner=root group=root mode=0755
+  tags:
+    - setup-ambari-blueprints
+    - hadrian-hdp
+
+- name: "** ambari blueprint ** download current clusters from ambari"
+  shell: "curl -s -u admin:admin http://{{ ambari_server }}:8080/api/v1/clusters > /root/rocana-blueprint/clusters.json"
+  tags:
+    - setup-ambari-blueprints
+    - hadrian-hdp
+
+- name: "** ambari blueprint ** generate parse ambari clusters list"
+  command: ./ParseResponse.py clusters.json clusters
+  register: parsed_current_clusters
+  args:
+    chdir: /root/rocana-blueprint
+  tags:
+    - setup-ambari-blueprints
+    - hadrian-hdp
+
+- name: "** ambari blueprint ** download current blueprints from ambari"
+  shell: "curl -s -u admin:admin http://{{ ambari_server }}:8080/api/v1/blueprints > /root/rocana-blueprint/blueprints.json"
+  tags:
+    - setup-ambari-blueprints
+    - hadrian-hdp
+
+- name: "** ambari blueprint ** generate parse ambari blueprint list"
+  command: ./ParseResponse.py blueprints.json blueprints
+  register: parsed_current_blueprints
+  args:
+    chdir: /root/rocana-blueprint
+  tags:
+    - setup-ambari-blueprints
+    - hadrian-hdp
+
+- name: "** ambari blueprint ** deleting previous rocana blueprint"
+  uri: url=http://{{ ambari_server }}:8080/api/v1/blueprints/{{ cluster_name }}
+       HEADER_X-Requested-By="ambari"
+       force_basic_auth=yes
+       user=admin
+       password=admin
+       method=DELETE
+       status_code=200,201,202
+  when: "'{{ cluster_name }}' in parsed_current_blueprints.stdout"
+  tags: setup-ambari-blueprints
+
+- name: "** ambari blueprint ** update HDP Repo URL"
+  command: /root/rocana-blueprint/post-to-ambari.sh PUT /root/rocana-blueprint/hdp-repo-payload.json http://{{ ambari_server }}:8080/api/v1/stacks/HDP/versions/2.3/operating_systems/redhat{{ ansible_distribution_major_version }}/repositories/HDP-2.3
+  tags: setup-ambari-blueprints
+
+- name: "** ambari blueprint ** update HDP-UTIL Repo URL"
+  command: /root/rocana-blueprint/post-to-ambari.sh PUT /root/rocana-blueprint/hdp-util-repo-payload.json http://{{ ambari_server }}:8080/api/v1/stacks/HDP/versions/2.3/operating_systems/redhat{{ ansible_distribution_major_version }}/repositories/HDP-UTILS-1.1.0.20
+  tags: setup-ambari-blueprints
+
+- name: "** ambari-blueprints ** hadrian-hdp generate blueprint and create-cluster json files"
+  command: ./CreateHdpCluster.py
+  args:
+    chdir: /root/rocana-blueprint
+  tags:
+    - setup-ambari-blueprints
+    - hadrian-hdp
+
+- name: "** ambari blueprint ** upload rocana blueprint"
+  command: /root/rocana-blueprint/post-to-ambari.sh POST /root/rocana-blueprint/rocana-blueprint.json http://{{ ambari_server }}:8080/api/v1/blueprints/{{ cluster_name }}
+  tags: setup-ambari-blueprints
+
+- name: "** ambari blueprint ** create hdp rocana cluster"
+  command: /root/rocana-blueprint/post-to-ambari.sh POST /root/rocana-blueprint/create-cluster.json http://{{ ambari_server }}:8080/api/v1/clusters/{{ cluster_name }}
+  when: "'{{ cluster_name }}' not in parsed_current_clusters.stdout"
+  tags: setup-ambari-blueprints
+
+- name: "** ambari blueprint ** wait for namenode to become available"
+  wait_for: host={{ namenode_host }} port=8020 state=started delay=30
+  tags: setup-ambari-server
+
+- name: "** ambari blueprint ** wait for hive metastore to become available"
+  wait_for: host={{ hive_metastore_server }} port=9083 state=started delay=30
+  tags: setup-ambari-server

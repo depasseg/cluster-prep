@@ -1,0 +1,56 @@
+---
+
+- name: "** postgres server ** clean repo data prior to package installation"
+  command: yum clean all
+  
+- name: "** postgres server ** install required packages"
+  yum: name=postgresql-server state=latest
+  tags: setup-postgresql
+
+- name: "** postgres server ** check for pre-initialized postgres server"
+  stat: path=/var/lib/pgsql/data/pg_hba.conf
+  register: pg_hba_exists
+  
+
+- name: "** postgres server ** init postgresql external database server"
+  command: /sbin/service postgresql initdb
+  when: pg_hba_exists.stat.exists == False
+  tags: setup-postgresql
+  
+#
+# Configure postgres server
+#
+- name: "** postgres server ** configure listen to all addresses in postgresql.conf"
+  replace: dest=/var/lib/pgsql/data/postgresql.conf
+              regexp="#listen_addresses = 'localhost'"
+              replace="listen_addresses = '*'"
+  tags: configure-postgres
+
+- name: "** postgres server ** configure pg_hba.conf"
+  replace: dest=/var/lib/pgsql/data/pg_hba.conf
+              regexp='host\s+all\s+all\s+127.0.0.1/32\s+ident'
+              replace='host    all         all         {{ pg_allowed_cidr_range }}          md5\nhost    all         all         127.0.0.1/32          md5\n'
+  tags: configure-postgres
+
+- name: "** postgres server ** start and ckconfig server on"
+  service: name=postgresql state=started enabled=yes
+  tags: configure-postgres
+  
+- name: "** postgres server ** check for existing databases"
+  shell: su -l postgres -c 'echo "SELECT usename FROM pg_user;" | /usr/bin/psql'
+  register: postgres_user_list
+  tags: configure-postgres
+  
+- name: "** postgres server ** update user and grant creation sql"
+  template: src=pg-db-{{ hadoop_distribution|lower }}-setup.sql.j2 dest=/var/lib/pgsql/pg-db-setup.sql owner=postgres group=postgres mode=0600
+  tags: configure-postgres
+  
+- name: "** postgres server ** create CDH users and grants"
+  shell: su -l postgres -c '/usr/bin/psql < /var/lib/pgsql/pg-db-setup.sql'
+  when: "'scm' not in postgres_user_list.stdout and hadoop_distribution|upper == 'CDH'" 
+  tags: configure-postgres
+
+- name: "** postgres server ** create HDP users and grants"
+  shell: su -l postgres -c '/usr/bin/psql < /var/lib/pgsql/pg-db-setup.sql'
+  when: "'ambari' not in postgres_user_list.stdout and hadoop_distribution|upper == 'HDP'" 
+  tags: configure-postgres

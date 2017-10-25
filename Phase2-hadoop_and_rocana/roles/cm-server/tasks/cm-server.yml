@@ -1,0 +1,76 @@
+---
+
+- name: "** cloudera manager ** prepare database"
+  command: /usr/share/cmf/schema/scm_prepare_database.sh postgresql scm scm {{ scm_password }} -h {{ postgres_server }}
+  tags: setup-cloudera-manager
+
+- name: "** cloudera manager ** start cloudera manager server"
+  service: name=cloudera-scm-server state=started enabled=true
+  tags: setup-cloudera-manager
+
+- name: "** cloudera manager ** copy hadrian files to /root/hadrian"
+  copy: src=hadrian dest=/root/ owner=root group=root
+  tags:
+    - setup-cloudera-manager
+    - create-cluster
+
+- name: "** cloudera manager ** ensure hadrian conf dirs exists"
+  file: path={{ item }} owner=root group=root mode=0755 state=directory
+  with_items:
+    - /root/hadrian/conf
+    - /root/hadrian/conf/cloudera-manager
+    - /root/hadrian/conf/{{ cluster_name }}
+  tags:
+    - create-cluster
+    - setup-cloudera-manager
+
+- name: "** cloudera manager ** fix run permissions on hadrian script"
+  file: path=/root/hadrian/hadrian.sh owner=root group=root mode=0755
+  tags:
+    - create-cluster
+    - setup-cloudera-manager
+
+- name: "** cloudera manager ** copy cloudera-manager.ini to to hadrian conf directory"
+  template: src=configs/{{ cluster_name }}/hadrian/cm.ini dest=/root/hadrian/conf/cloudera-manager/cm.ini owner=root group=root mode=0644
+  tags:
+    - create-cluster
+    - setup-cloudera-manager
+
+- name: "** cloudera manager ** copy hadrian configs to hadrian config directory"
+  template: src=configs/{{ cluster_name }}/hadrian/{{ item }} dest=/root/hadrian/conf/{{ item }} owner=root group=root mode=0644
+  with_items:
+    - cluster_specs.ini
+    - hadrian.ini
+  tags:
+    - create-cluster
+    - setup-cloudera-manager
+
+- name: "** cloudera manager ** copy hadrian cluster service configs to hadrian config directory"
+  template: src=configs/{{ cluster_name }}/hadrian/service_configs/{{ item }} dest=/root/hadrian/conf/{{ cluster_name }}/{{ item }} owner=root group=root mode=0644
+  with_items:
+    - hdfs.ini
+    - hive.ini
+    - impala.ini
+    - kafka.ini
+    - yarn.ini
+    - zookeeper.ini  
+  tags:
+    - create-cluster
+    - setup-cloudera-manager
+
+- name: "** cloudera-manager ** copy cloudera manager enterprise license file"
+  copy: src=cm_license.txt dest=/root/hadrian/cm_license.txt owner=root group=root mode=0644
+  when: cm_enterprise_license
+  tags: setup-cloudera-manager
+
+- name: "** cloudera manager ** wait for cloudera manager to become available"
+  wait_for: port=7180 state=started delay=30
+  tags: setup-cloudera-manager
+
+- name: "** hadrian ** create CM cluster"
+  command: ./hadrian.sh >> /root/hadrian/hadrian_run.log
+  args:
+    chdir: /root/hadrian
+  tags:
+    - setup-cloudera-manager
+    - create-cluster

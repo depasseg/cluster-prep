@@ -1,0 +1,38 @@
+---
+
+- name: "** rocana ** create rocana user"
+  user: name=rocana comment=rocana-ops-user shell=/bin/bash state=present home=/opt/rocana
+  ignore_errors: yes
+  tags: create-rocana-user
+
+- name: "** rocana ** add limits.d for rocana user"
+  copy: src=limits.d-rocana dest=/etc/security/limits.d/rocana.conf owner=root group=root mode=0644
+  tags: create-rocana-user
+  
+- name: "** rocana ** copy bashrc template to rocana user home"
+  template: src=rocana.bashprofile.j2 dest=/opt/rocana/.bash_profile owner=rocana group=rocana mode=0644
+  tags: create-rocana-user
+
+#
+# Add Impala and Hive users to the rocana group.
+#
+- name: "** rocana ** add impala and hive to the rocana group"
+  user: name={{ item }} groups=rocana append=yes
+  with_items:
+    - hive
+    - impala
+  tags: create-rocana-user
+
+- name: "** rocana ** refresh namenode group mappings to add impala and hive to the rocana group"
+  shell: su -l hdfs -c 'hdfs dfsadmin -refreshUserToGroupsMappings'
+  when: ansible_fqdn == "{{ groups['namenode'][0] }}"
+  tags:
+    - create-rocana-user
+    - refresh-user-mapping
+
+- name: "** rocana ** refresh resource manager group mappings to add impala and hive to the rocana group"
+  shell: su -l yarn -c 'yarn rmadmin -refreshUserToGroupsMappings'
+  when: ansible_fqdn == "{{ groups['resource-manager'][0] }}"
+  tags:
+    - create-rocana-user
+    - refresh-user-mapping

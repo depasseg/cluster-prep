@@ -1,0 +1,142 @@
+---
+
+#
+# Nice root user configs
+#
+- name: "** hadoop ** copy root bashrc to all hadoop hosts"
+  copy: src=root.bashrc dest=/root/.bashrc owner=root group=root mode=0644
+  tags: deploy-bashrc
+
+- name: "** hadoop ** copy root .tmux.conf to all hadoop hosts"
+  copy: src=tmux.conf dest=/root/.tmux.conf owner=root group=root mode=0644
+  tags: deploy-tmux-conf
+
+#
+# Disable THP on RedHat/Centos6
+#
+
+- name: "** hadoop ** stat thp defrag file on RedHat/Centos 6"
+  stat: path=/sys/kernel/mm/redhat_transparent_hugepage/defrag
+  when: ansible_os_family == "RedHat" and ansible_distribution_major_version|int == 6
+  register: thpdefrag6
+  tags: disable-thp
+
+- name: "** hadoop ** stat thp defrag file on RedHat/Centos 6"
+  stat: path=/sys/kernel/mm/redhat_transparent_hugepage/enabled
+  when: ansible_os_family == "RedHat" and ansible_distribution_major_version|int == 6
+  register: thpenable6
+  tags: disable-thp
+
+- name: "** hadoop ** disable thp defrag on RedHat/Centos 6"
+  shell: echo never > /sys/kernel/mm/redhat_transparent_hugepage/defrag
+  when: thpdefrag6.stat is defined
+  tags: disable-thp
+
+- name: "** hadoop ** disable thp on RedHat/Centos 6"
+  shell: echo never > /sys/kernel/mm/redhat_transparent_hugepage/enabled
+  when: thpenable6.stat is defined
+  tags: disable-thp
+
+#
+# Disable THP on RedHat/Centos 7
+#
+
+- name: "** hadoop ** stat thp defrag file on RedHat/Centos 7"
+  stat: path=/sys/kernel/mm/transparent_hugepage/defrag
+  when: ansible_os_family == "RedHat" and ansible_distribution_major_version|int == 7
+  register: thpdefrag7
+  tags: disable-thp
+
+- name: "** hadoop ** stat thp defrag file on RedHat/Centos 7"
+  stat: path=/sys/kernel/mm/transparent_hugepage/enabled
+  when: ansible_os_family == "RedHat" and ansible_distribution_major_version|int == 7
+  register: thpenable7
+  tags: disable-thp
+
+- name: "** hadoop ** disable thp defrag on RedHat/Centos 7"
+  shell: echo never > /sys/kernel/mm/transparent_hugepage/defrag
+  when: thpdefrag7.stat is defined
+  tags: disable-thp
+
+- name: "** hadoop ** disable thp on RedHat/Centos 7"
+  shell: echo never > /sys/kernel/mm/transparent_hugepage/enabled
+  when: thpenable7.stat is defined
+  tags: disable-thp
+
+
+
+#
+# Grubby time - permanently disable THP, set printk.time=1 so dmesg is more helpful
+#
+- name: "** hadoop ** enable printk.time=1 on grub so that dmesg has timestamps"
+  shell: /sbin/grubby --update-kernel=ALL --args=printk.time=1
+  tags: grub-config
+
+- name: "** hadoop ** disable thp permanently."
+  shell: /sbin/grubby --update-kernel=ALL --args=transparent_hugepage=never
+  tags: grub-config
+
+#
+# remove bridge configs in sysctl if libvirt isn't installed
+#
+- name: "** hadoop ** check for libvirt"
+  shell: rpm -q  libvirt
+  register: libvirt_check
+  failed_when: libvirt_check.rc > 1
+  tags: tune-sysctl
+
+- name: "** hadoop ** update sysctl vm.swappiness"
+  sysctl: name={{ item }} state=absent reload=no
+  with_items:
+    - net.bridge.bridge-nf-call-ip6tables
+    - net.bridge.bridge-nf-call-iptables
+    - net.bridge.bridge-nf-call-arptables
+  when: libvirt_check.rc != 0
+  tags: tune-sysctl
+
+#
+#  Set vm.swappiness and reload the sysctl.conf
+#
+- name: "** hadoop ** update sysctl with vm.swappiness set to 0"
+  sysctl: name=vm.swappiness value=0 reload=yes
+  when: ansible_os_family == "RedHat" and ansible_distribution_major_version|int == 6
+  tags: tune-sysctl
+
+- name: "** hadoop ** update sysctl with vm.swappiness set to 1 for RedHat/Centos 7"
+  sysctl: name=vm.swappiness value=1 reload=yes
+  when: ansible_os_family == "RedHat" and ansible_distribution_major_version|int == 7
+  tags: tune-sysctl
+
+#
+# disable selinux
+#
+- name: "** hadoop ** disable selinux"
+  selinux: state=disabled
+  tags: disable-selinux
+  
+#
+# fix alternatives in case there's an openjdk lurking
+#
+- name: "** hadoop ** installing java alternatives to use the java home defined in group_vars/all.yml jdk"
+  shell: "alternatives --install '{{ item.binpath }}' '{{ item.command }}' '{{ item.targetpath }}' 2"
+  with_items:
+     - { 'binpath': '/usr/bin/java', 'command': 'java', 'targetpath': '{{ java_jdk_home }}/bin/java' }
+     - { 'binpath': '/usr/bin/javac', 'command': 'javac', 'targetpath': '{{ java_jdk_home }}/bin/javac' }
+     - { 'binpath': '/usr/bin/jar', 'command': 'jar', 'targetpath': '{{ java_jdk_home }}/bin/jar' }
+     - { 'binpath': '/usr/bin/jstack', 'command': 'jstack', 'targetpath': '{{ java_jdk_home }}/bin/jstack' }
+     - { 'binpath': '/usr/bin/jmap', 'command': 'jmap', 'targetpath': '{{ java_jdk_home }}/bin/jmap' }
+  ignore_errors: yes
+  tags: update-jdk-alternatives
+
+- name: "** hadoop ** updating java alternatives to use the java home defined in group_vars/all.yml jdk"
+  shell: "alternatives --set '{{ item.command }}' '{{ item.targetpath }}'"
+  with_items:
+     - { 'command': 'java', 'targetpath': '{{ java_jdk_home }}/bin/java' }
+     - { 'command': 'javac', 'targetpath': '{{ java_jdk_home }}/bin/javac' }
+     - { 'command': 'jar', 'targetpath': '{{ java_jdk_home }}/bin/jar' }
+     - { 'command': 'jstack', 'targetpath': '{{ java_jdk_home }}/bin/jstack' }
+     - { 'command': 'jmap', 'targetpath': '{{ java_jdk_home }}/bin/jmap' }
+  ignore_errors: yes
+  tags: update-jdk-alternatives
+
+

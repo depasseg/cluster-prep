@@ -1,0 +1,6 @@
+---
+
+- include: repos.yml
+- include: pkgs.yml
+- include: krb-client.yml
+- include: cm-agent.yml

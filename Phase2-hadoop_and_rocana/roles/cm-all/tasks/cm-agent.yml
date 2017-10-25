@@ -1,0 +1,11 @@
+---
+
+# Configure the CM agent
+- name: "** cm-all ** configure the cm agent"
+  lineinfile: dest=/etc/cloudera-scm-agent/config.ini regexp=^server_host=localhost line=server_host={{ cm_server }} state=present
+  tags: configure-cm-agent
+
+# start CM agent service, chkconfig it on
+- name: "** cm-all ** (re)start and chkconfig on cm-agent service"
+  service: name=cloudera-scm-agent state=restarted enabled=yes
+  tags: start-cm-agent

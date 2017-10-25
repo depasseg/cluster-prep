@@ -1,0 +1,4 @@
+---
+- include: hadoop.yml
+- include: rocana.yml
+- include: rocana-agents.yml

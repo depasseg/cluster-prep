@@ -1,0 +1,384 @@
+#
+# Copyright (c) 2015 Rocana. All rights reserved.
+#
+# This is a sample Data Lifecycle Management configuration file. For the full documentation,
+# see the Rocana Reference Guide.
+#
+###################################################################################################
+# Name: kerberos.principal
+# Required: Yes (in a kerberos environment)
+#
+# HDFS only: When running in a kerberos secured environment, you must specify an hdfs superuser
+# principal and keytab that can be used to proxy the users specified for each job.
+#
+# Ex.
+# kerberos.principal = {{ rocana_kerberos_principal }}
+#
+###################################################################################################
+# Name: kerberos.principal.keytab
+# Required: Yes (in a kerberos environment)
+#
+# HDFS only: If running in a kerberos secured environment you need to specify the location of
+# the keytab for the superuser to authenticate with.
+#
+# Ex.
+# kerberos.principal.keytab = {{ rocana_keytab }}
+#
+###################################################################################################
+# Name: kerberos.impala.principal
+# Required: Yes (in a kerberos environment)
+#
+# The Kerberos principal used to start Impala on impala.host. It's not necessary to provide a keytab
+# for this principal. This principal must include the hostname, which should be impala.host. If you
+# leave the hostname set to "_HOST", it will automatically be replaced with the fully qualified
+# domain name of the Impala server.
+#
+# Ex.
+# kerberos.impala.principal = impala/_HOST@{{ kerberos_realm }}
+#
+###################################################################################################
+# Name: impala.host
+# Required: Yes
+#
+# The host that will be used to invalidate pruned Impala data.
+#
+# Ex.
+impala.host = {{ impala_host }}
+#
+###################################################################################################
+# Name: impala.port
+# Required: No
+#
+# Impala SQL access port, 21050 by default.
+#
+# Ex.
+# impala.port = 21050
+#
+###################################################################################################
+# Name: impala.refresh.enabled
+# Required: No
+# Default: true
+#
+# Control whether or not DLM refreshes Impala tables after pruning and compacting
+#
+# Ex.
+# impala.refresh.enabled = false
+#
+###################################################################################################
+# Name: temp.repo
+# Required: Yes
+#
+# An HDFS repository where temporary datasets will be created for compaction jobs. It *must*
+# be a plain (non-Hive, or other) HDFS repository, and must be writable by the user (or principal)
+# that runs the DLM service.
+#
+# Ex.
+temp.repo = {{ dlm_temp_repo }}
+#
+###################################################################################################
+# Name: temp.namespace
+# Required: No
+# Default: default
+#
+# The namespace inside of the temporary repo used to create temporary datasets.
+# Only applicable to hdfs repos.
+#
+# Ex. Create temporary datasets inside the rocana namespace
+# temp.namespace = {{ rocana_namespace }}
+#
+###################################################################################################
+# Name: zookeeper.quorum
+# Required: Yes
+#
+# A comma separated list of <hostname>:<port> of zookeeper servers where an exclusive lock will
+# be placed to prevent multiple DLM daemons from running at the same time. It's also possible to
+# specify an optional root path in ZooKeeper after the port. This is useful when you're using a
+# shared ZooKeeper quorum with other services.
+#
+# Ex.
+zookeeper.quorum = {{ zookeeper_quorum }}
+#
+###################################################################################################
+# Name: prune
+# Required: Yes
+# A comma separated list of dataset pruner configuration names.
+#
+# This property only declares the pruner configuration name. Once declared,
+# the pruner configuration properties must be specified. See later in this
+# file for an example.
+#
+# Ex. A single pruner for the events dataset:
+# prune = events
+#
+# Ex. Multiple prune jobs, for pruning various datasets
+# prune = events, search, metrics, anomalies
+#
+###################################################################################################
+# Name: prune.<config name>.repo
+# Required: Yes
+#
+# The location of the dataset repository (URI) containing the dataset to be pruned.
+#
+# Ex.
+# prune.events.repo = {{ events_repo }}
+# prune.search.repo = 
+# prune.metrics.repo = {{ metrics_repo }}
+# prune.anomalies.repo = {{ anomalies_repo }}
+#
+###################################################################################################
+# Name: prune.<config name>.namespace
+# Required: No
+#
+# The namespace of the dataset repository containing this job's dataset.
+# Only applicable to hdfs repos. Defaults to "default".
+#
+# Ex. Look for datasets in the rocana namespace
+# prune.events.namespace = {{ rocana_namespace }}
+# prune.metrics.namespace = {{ rocana_namespace }}
+# prune.anomalies.namespace = {{ rocana_namespace }}
+#
+###################################################################################################
+# Name: prune.<config name>.dataset
+# Required: Yes
+#
+# For HDFS/Hive/Impala and Rocana Search: The name of the dataset to be pruned.
+# This dataset must already exist. To create a dataset, see the rocana-data command.
+#
+# Ex
+# prune.events.dataset = events
+# prune.search.dataset = events-idx
+# prune.metrics.dataset = metrics
+###################################################################################################
+# Name: prune.<config name>.kafka.brokers
+# Required: No (except for Rocana Search)
+#
+# For Rocana Search only, the Kafka brokers where RS metadata coordination takes
+# place. Must match kafka.brokers in Rocana Search configuration.
+#
+# Ex
+# prune.search.kafka.brokers = {{ kafka_brokers }}
+#
+###################################################################################################
+# Name: prune.<config name>.kafka.metadata.topic
+# Required: No
+# Default: rocana-search-metadata
+#
+# For Rocana Search only, the Kafka topic where RS metadata coordination takes
+# place. Must match kafka.brokers.metadata.topic in Rocana Search configuration.
+#
+# Ex
+# prune.search.kafka.metadata.topic = rocana-search-metadata
+#
+###################################################################################################
+# Name: prune.<config name>.type
+# Required: Yes
+#
+# The type of repo/dataset this pruner operates on. One of
+# 'rocana-search', or 'hdfs'.
+#
+# Ex
+# prune.events.type = hdfs
+# prune.search.type = rocana-search
+# prune.metrics.type = hdfs
+# prune.anomalies.type = hdfs
+#
+###################################################################################################
+# Name: prune.<config name>.schedule
+# Required: Yes
+#
+# The schedule to run this pruner on. Standard Unix cron format (without Year).
+# Field order:
+#   minutes, hours, days of month, months, days of week
+# Note that one of the 'days of month' or 'days of week' must be '*'
+# For more information see: https://en.wikipedia.org/wiki/Cron#Format
+#
+# Ex
+# prune.events.schedule = 0 * * * *
+# prune.search.schedule = 2 * * * *
+# prune.metrics.schedule = 4 * * * *
+# prune.anomalies.schedule = 5 * * * *
+#
+###################################################################################################
+# Name: prune.<config name>.username
+# Required: No
+#
+# HDFS only: When the pruner is run in a kerberos secured environment each job can write as a
+# different user. Alternatively, the user can be arbitrarily overridden when running outside
+# of a kerberos environment.
+#
+# Ex.
+# prune.events.username = {{ rocana_kerberos_principal }}
+# prune.search.username = {{ rocana_kerberos_principal }}
+# prune.metrics.username = {{ rocana_kerberos_principal }}
+# prune.anomalies.username = {{ rocana_kerberos_principal }}
+#
+###################################################################################################
+# Name: prune.<config name>.retain-days
+# Required: Yes
+#
+# The number of full days worth of data to retain in addition to the current partial
+# day (since UTC midnight). Anything older is subject to be pruned.
+#
+# Ex.
+# prune.events.retain-days = 3650
+# prune.search.retain-days = 365
+# prune.metrics.retain-days = 90
+# prune.anomalies.retain-days = 180
+#
+###################################################################################################
+# Name: compact
+# Required: Yes
+#
+# A comma separated list of dataset compactor configuration names.
+#
+# This property only declares the compactor configuration name. Once declared,
+# the compactor configuration properties must be specified. See later in this
+# file for an example. Compactors are not available for Rocana Search datasets
+# which self-compact.
+#
+# Ex. A single compactor for the events dataset
+# compact = events
+#
+# Ex. Multiple compactors, for various datasets
+compact = events, metrics, anomalies
+#
+###################################################################################################
+# Name: compact.<config name>.repo
+# Required: Yes
+#
+# The URI of the dataset repository containing the dataset to be compacted.
+#
+# Ex.
+compact.events.repo = {{ events_repo }}
+compact.metrics.repo = {{ metrics_repo }}
+compact.anomalies.repo = {{ anomalies_repo }}
+#
+###################################################################################################
+# Name: compact.<config name>.namespace
+# Required: No
+#
+# The namespace of the dataset repository containing this job's dataset.
+# Only applicable to hdfs repos. Defaults to "default".
+#
+# Ex. Look for datasets in the rocana namespace
+# compact.events.namespace = {{ rocana_namespace }}
+# compact.metrics.namespace = {{ rocana_namespace }}
+# compact.anomalies.namespace = {{ rocana_namespace }}
+#
+###################################################################################################
+# Name: compact.<config name>.dataset
+# Required: Yes
+#
+# The name of the dataset to be compacted. This dataset must already exist.
+# To create a dataset, see the rocana-data command.
+#
+# Ex
+compact.events.dataset = events
+compact.metrics.dataset = metrics
+compact.anomalies.dataset = anomalies
+#
+###################################################################################################
+# Name: compact.<config name>.type
+# Required: Yes
+#
+# The type of repo/dataset this compactor operates on. Value must be hdfs.
+#
+# Ex
+compact.events.type = hdfs
+compact.metrics.type = hdfs
+compact.anomalies.type = hdfs
+#
+###################################################################################################
+# Name: compact.<config name>.schedule
+# Required: Yes
+#
+# The schedule to run this compactor on. Standard Unix cron format (without Year).
+# Field order:
+#   minutes, hours, days of month, months, days of week
+# Note that one of the 'days of month' or 'days of week' must be '*'
+# For more information see: https://en.wikipedia.org/wiki/Cron#Format
+#
+# Ex
+# # Compact 'events' dataset every four hours, on the :45
+compact.events.schedule = */15 * * * *
+# # Compact 'metrics' every twenty minutes
+compact.metrics.schedule = */10 * * * *
+## Compact 'anomalies' twice an hour, on :15 and :45
+compact.anomalies.schedule = */20 * * * *
+#
+###################################################################################################
+# Name: compact.<config name>.username
+# Required: No
+#
+# HDFS only: When the compactor is run in a kerberos secured environment each job can write as a
+# different user. Alternatively, the user can be arbitrarily overridden when running outside
+# of a kerberos environment.
+#
+# Ex.
+# compact.events.username = {{ rocana_kerberos_principal }}
+# compact.metrics.username = {{ rocana_kerberos_principal }}
+# compact.anomalies.username = {{ rocana_kerberos_principal }}
+#
+###################################################################################################
+# Name: compact.<config name>.max-files-per-run
+# Required: No
+# Default: 100
+#
+# The maximum number of files in a single partition to compact in one compaction run. Remaining
+# files will be left as-is, to be compacted in future runs.
+#
+# Ex.
+compact.anomalies.max-files-per-run = 10000
+compact.events.max-files-per-run = 10000
+compact.merics.max-files-per-run = 10000
+#
+###################################################################################################
+# Name: compact.<config name>.max-file-size-mb
+# Required: No
+# Default: 256
+#
+# The maximum target size of individual compacted files. Many smaller files will be combined
+# into larger files that are at max this size, resulting in one or more larger files
+# that are 'max-file-size-mb' or smaller.
+#
+# Ex.
+compact.events.max-file-size-mb = 512
+compact.metrics.max-file-size-mb = 512
+compact.anomalies.max-file-size-mb = 512
+#
+###################################################################################################
+###################################################################################################
+# Name: metrics.log-report-frequency
+# Required: Yes
+#
+# The frequency at which metrics are output to the dlm logs, in seconds. If this
+# value is 0, then there will not be any metrics output to the logs.
+#
+# Ex.
+metrics.log-report-frequency = {{ metrics_report_frequency }}
+#
+###################################################################################################
+# Name: admin.server.bind-address
+# Required: No
+# Default: 0.0.0.0
+#
+# The IP or hostname to which the admin HTTP service should bind. If set to
+# 0.0.0.0 (wildcard), the server will bind to all available interfaces.
+#
+# Ex.
+# admin.server.bind-address = localhost
+#
+# Ex.
+# admin.server.bind-address = dlm1234.rocana.com
+#
+###################################################################################################
+# Name: admin.server.port
+# Required: Yes
+# Default: 17316
+#
+# The port to which the admin HTTP service should bind.
+#
+# Ex.
+admin.server.port = 17316
+#
+###################################################################################################

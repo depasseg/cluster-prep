@@ -1,0 +1,22 @@
+---
+
+- name: "** install JDK ** ensure jdk is installed on hadoop hosts."
+  yum: name={{ jdk_package_name }} state=latest
+  tags: install-ambari-agent
+  
+- name: "** ambari-all ** install Ambari agent packages"
+  yum: name={{ item }} state=latest
+  with_items:
+    - ambari-agent
+  tags: install-ambari-agent
+
+- name: "** ambari-all ** install HDP packages"
+  yum: name={{ item }} state=latest
+  with_items:
+    - hadoop*_2_3*
+    - hive*_2_3*
+    - hadooplzo*
+    - tez*_2_3*
+    - zookeeper*_2_3*
+    - kafka*_2_3*
+  tags: install-ambari-agent

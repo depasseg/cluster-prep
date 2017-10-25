@@ -1,0 +1,26 @@
+---
+
+# Configure the Ambari agent
+- name: "** ambari-all ** configure the ambari agent"
+  replace: dest=/etc/ambari-agent/conf/ambari-agent.ini regexp=hostname=localhost replace=hostname={{ ambari_server }}
+  tags: configure-ambari-agent
+  
+
+# start the Ambari agent service, chkconfig it on
+- name: "** ambari-all ** RHEL/CentOS 7 (re)start and chkconfig on the ambari agent service" 
+  service: name=ambari-agent state=started enabled=yes
+  when: "'{{ ansible_distribution_major_version }}' == '7'"
+  tags: start-ambari-agent
+
+- name: "** ambari-all ** RHEL/CentOS 6 (re)start the ambari agent service"
+  command: /sbin/service ambari-agent restart
+  when: "'{{ ansible_distribution_major_version }}' == '6'"
+  tags: start-ambari-agent
+
+- name: "** ambari-all ** RHEL/CentOS 6 chkconfig on the ambari agent service"
+  command: /sbin/chkconfig ambari-agent on
+  when: "'{{ ansible_distribution_major_version }}' == '6'"
+  tags: start-ambari-agent
+
+
+

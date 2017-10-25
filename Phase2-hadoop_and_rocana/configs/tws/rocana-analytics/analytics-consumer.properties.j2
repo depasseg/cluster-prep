@@ -1,0 +1,355 @@
+#
+# Copyright (c) 2015 Rocana. All rights reserved.
+#
+# This is a sample Analytics Consumer configuration file. For the full documentation,
+# see the Rocana Reference Guide.
+###################################################################################################
+# Name: impala.host
+# Required: Yes
+#
+# The host that will be used to query Impala for metric data.
+#
+# Ex.
+impala.host = {{ impala_host }}
+###################################################################################################
+# Name: impala.port
+# Required: No
+#
+# Impala SQL access port, 21050 by default.
+#
+# Ex.
+# impala.port = 21050
+###################################################################################################
+# Name: impala.refresh.frequency
+# Required: No
+# Default: 1 minute
+#
+# We periodically refresh the metrics table so that Impala can query recently ingested data.
+# This setting controls how often, in minutes, the refresh query is executed.
+#
+# Set to -1 to disable.
+#
+# Ex.
+# impala.refresh.frequency = -1
+###################################################################################################
+# Name: kerberos.principal
+# Required: Yes (in a kerberos environment)
+#
+# The user to connect to Impala as - kerberos.keytab must contain a key for this principal.
+#
+# Ex.
+# kerberos.principal = {{ rocana_kerberos_principal }}
+###################################################################################################
+# Name: kerberos.principal.keytab
+# Required: Yes (in a kerberos environment)
+#
+# The keytab to use when connecting to Impala. This must contain a key for kerberos.principal
+# and be readable by the user running the web server.
+#
+# Ex.
+# kerberos.principal.keytab = {{ rocana_keytab }}
+###################################################################################################
+# Name: kerberos.impala.principal
+# Required: Yes (in a kerberos environment)
+#
+# The Kerberos principal used to start Impala on impala.host. It's not necessary to provide a keytab
+# for this principal. This principal must include the hostname, which should be impala.host. If you
+# leave the hostname set to "_HOST", it will automatically be replaced with the fully qualified
+# domain name of the Impala server.
+#
+# Ex.
+# kerberos.impala.principal = impala/_HOST@{{ kerberos_realm }}
+###################################################################################################
+# Name: jdbc.url
+# Required: Yes
+#
+# The Analytics Consumer requires access to the same PostgreSQL 8+ database as the webapp.
+# The jdbc.url specifies which database to connect to. This database must be setup prior
+# to starting the Analytics Consumer by starting the webapp.
+#
+# Ex.
+jdbc.url = jdbc:postgresql://{{ postgres_server }}:5432/rocana
+###################################################################################################
+# Name: jdbc.user
+# Required: Yes
+#
+# The user name to connect to the database with.
+#
+# Ex.
+jdbc.user = rocana
+###################################################################################################
+# Name: jdbc.password
+# Required: Yes
+#
+# The password to connect to the database with.
+#
+# Ex.
+jdbc.password = {{ rocana_password }}
+###################################################################################################
+# Name: pipeline
+# Required: Yes
+#
+# A comma separated list of pipeline configuration names. Each pipeline
+# configuration creates one or more pipelines in the consumer based on the
+# specified number of threads. A pipeline is fully independent, with its own
+# analytics and anomalies produced.
+#
+# Ex. A single pipeline called events.
+pipeline = events
+#
+# Ex. Two pipelines called events-b and events-b
+# pipeline = events-a, events-b
+###################################################################################################
+# Name: pipeline.<config name>.producer.kafka.brokers
+# Required: Yes
+#
+# A comma separated list of <hostname>:<port> of Kafka brokers where events will be sent to
+#
+# Results of data analysis such as anomaly detection are events which are pushed back
+# into Kafka and then indexed into Rocana Search. For the anomalies to be
+# displayed in the UI this has to match the Kafka brokers configured for Rocana Search.
+#
+# Ex.
+pipeline.events.producer.kafka.brokers = {{ kafka_brokers }}
+###################################################################################################
+# Name: pipeline.<config name>.producer.topic
+# Required: Yes
+#
+# The name of the Kafka topic which the analysis results will be sent to.
+#
+# This must match the name of a kafka topic that Rocana Search uses to consume events.
+#
+# Ex.
+pipeline.events.producer.topic = events
+###################################################################################################
+# Name: pipeline.<config name>.analytics.window-time-min
+# Required: No
+# Default: 1 minute
+#
+# The window size in minutes used to retrieve all event volume aggregates from Impala.
+#
+# The minimum allowed interval is one minute which is the default value.
+#
+# Ex.
+# pipeline.events.analytics.window-time-min = 1
+###################################################################################################
+# Name: pipeline.<config name>.analytics.impala.table
+# Required: No
+# Default: metrics
+#
+# The table name in Impala where metrics data lives.
+#
+# Ex.
+# pipeline.events.analytics.impala.table = metrics
+###################################################################################################
+# Name: pipeline.<config name>.analytics.impala.namespace
+# Required: No
+# Default: default
+#
+# The namespace in Impala where metrics data lives.
+#
+# Ex.
+# pipeline.events.analytics.impala.namespace = {{ rocana_namespace }}
+###################################################################################################
+# Name: pipeline.<config name>.analytics.impala.delay-min
+# Required: No
+# Default: 6 minutes
+#
+# The artificial delay to allow complete metrics data to be written in Impala. This should be a
+# balance between lower latency and having complete data for detecting anomalies.
+#
+# Ex.
+# pipeline.events.analytics.impala.delay-min = 6
+###################################################################################################
+# Name: pipeline.<config name>.analytics.impala.custom-functions-path
+# Required: No
+# Default: /user/impala/udfs/librocana-udfs.so
+#
+# The location in HDFS where the Impala UDF shared object file lives.
+#
+# Ex.
+# pipeline.events.analytics.impala.custom-functions-path = /user/impala/udfs/librocana-udfs.so
+###################################################################################################
+# Name: pipeline.<config name>.analytics.historical-weeks-num
+# Required: No
+# Default: 8 weeks
+#
+# The maximum number of weeks used to gather historical event volume for building a model.
+#
+# A new model is created for each new day by looking back at the corresponding day in previous weeks.
+#
+# The model is used to represent normal behaviour so too large of a number would create an outdated
+# inaccurate model. Too small of a number would under represent the historical data
+# and could lead to including anomalies and unexpected behaviour in the model.
+#
+# Ex.
+# pipeline.events.analytics.historical-weeks-num = 8
+###################################################################################################
+# Name: pipeline.<config name>.analytics.compare-interval-min
+# Required: No
+# Default: 5 minutes
+#
+# This specifies the time interval at which the new data is compared against the historical model
+# to check for anomalies. This must be larger than the window-time-min configuration.
+# The default is set at 5 minutes.
+#
+# Ex.
+# pipeline.events.analytics.compare-interval-min = 5
+###################################################################################################
+# Name: pipeline.<config name>.analytics.threads
+# Required: No
+# Default: 1
+#
+# The number of threads that will be created to perform anomaly detection. More threads mean
+# more work is performed in parallel. For a dedicated machine, one thread for each physical CPU
+# core is appropriate.
+#
+# Ex.
+# pipeline.events.analytics.threads = 4
+###################################################################################################
+# Name: pipeline.<config name>.analytics.blacklist.key
+# Required: No
+#
+# This is a comma separated list of blacklist configuration names. It is used to blacklist data
+# sources from anomaly detection. For instance, if you don't want anomaly detection on event
+# volume originating from a specific service such as Zookeeper you would configure it using a
+# blacklist.
+#
+# Ex.
+# pipeline.events.analytics.blacklist.key = blackList1, blackList2, blackList3
+###################################################################################################
+# Name: pipeline.<config name>.analytics.blacklist.<blacklist name>.location
+# Required: No
+#
+# Data source location to be blacklisted
+#
+# Ex.
+# pipeline.events.analytics.blacklist.blackList1.location = aws-us-west-2
+###################################################################################################
+# Name: pipeline.<config name>.analytics.blacklist.<blacklist name>.host
+# Required: No
+#
+# Data source host to be blacklisted
+#
+# Ex.
+# pipeline.events.analytics.blacklist.blackList1.host = host1
+###################################################################################################
+# Name: pipeline.<config name>.analytics.blacklist.<blacklist name>.service
+# Required: No
+#
+# Data source service to be blacklisted
+#
+# Ex.
+# pipeline.events.analytics.blacklist.blackList1.service = zookeeper
+###################################################################################################
+# Name: pipeline.<config name>.analytics.blacklist.<blacklist name>.name
+# Required: No
+#
+# Data source metric name to be blacklisted
+#
+# Ex.
+# pipeline.events.analytics.blacklist.blackList1.name = rocana.host.cpu.all.perc_sys
+###################################################################################################
+# Name: pipeline.<config name>.analytics.blacklist.<blacklist name>.exp
+# Required: No
+#
+# Expressions that correspond to Impala's SQL operators.
+#
+# Ex.
+# pipeline.events.analytics.blacklist.blackList1.exp = host like 'pr%', service like 's1%'
+###################################################################################################
+# Name: pipeline.<config name>.analytics.evaluation-type
+# Required: No
+# Default: intervals
+#
+# Anomaly Detection evaluation method type. Accepted values are intervals or rms.
+#
+# Ex.
+# pipeline.events.analytics.evaluation-type = rms
+###################################################################################################
+# Name: pipeline.<config name>.analytics.intervals.anomaly-weight
+# Required: No
+# Default: 0.5
+#
+# The weight used to penalize an anomaly. The larger the weight, the less impact a detected
+# anomaly will have on the future evaluation. Value must be between 0 and 1.
+#
+# Ex.
+# pipeline.events.analytics.intervals.anomaly-weight = 0.7
+###################################################################################################
+# Name: pipeline.<config name>.analytics.intervals.sensitivity
+# Required: No
+# Default: 1.5
+#
+# This value is used to control the sensitivity of the anomaly detection. A large number will
+# reduce false positives, but too large of a number will cause false negatives.
+#
+# Ex.
+# pipeline.events.analytics.intervals.sensitivity = 2.0
+###################################################################################################
+# Name: pipeline.<config name>.analytics.intervals.bootstrap-trials
+# Required: No
+# Default: 6
+#
+# This value is used to control the number of bootstrap trials we run on recent data. A larger
+# number would mean more data is used for the anomaly detection evaluation. Too large of a
+# number will consumer more resources, which is not recommended.
+#
+# Ex.
+# pipeline.events.analytics.intervals.bootstrap-trials = 4
+###################################################################################################
+# Name: pipeline.<config name>.analytics.intervals.percentile
+# Required: No
+# Default: 0.9
+#
+# This value controls the percentile interval value expressed as a decimal.
+# You can think of it as a confidence interval.
+# The larger the number, the wider the band, which results in a decrease in false positives
+# however there's also a false negative risk with increasing the number too much.
+# Value must be between 0 and 1.
+#
+# Ex.
+# pipeline.events.analytics.intervals.percentile = 0.99
+###################################################################################################
+# Name: pipeline.<config name>.analytics.intervals.recent-window-min
+# Required: No
+# Default: 120
+#
+# The number of minutes we look back. For recent data to include in the anomaly detection evaluation.
+# The larger the number, the longer the look back we don't recommend going beyond 120 minutes.
+# Value must be between 60 and 120.
+#
+# Ex.
+# pipeline.events.analytics.intervals.recent-window-min = 70
+###################################################################################################
+# Name: metrics.log-report-frequency
+# Required: Yes
+#
+# The frequency at which metrics are output to the consumer logs, in seconds. If this
+# value is 0, then there will not be any metrics output to the logs.
+#
+# Ex.
+metrics.log-report-frequency = {{ metrics_report_frequency }}
+###################################################################################################
+# Name: admin.server.bind-address
+# Required: No
+# Default: 0.0.0.0
+#
+# The IP or hostname to which the admin HTTP service should bind. If set to
+# 0.0.0.0 (wildcard), the server will to all available interfaces.
+#
+# Ex.
+# admin.server.bind-address = localhost
+#
+# Ex.
+# admin.server.bind-address = consumer1234.rocana.com
+###################################################################################################
+# Name: admin.server.port
+# Required: Yes
+# Default: 17315
+#
+# The port to which the admin HTTP service should bind.
+#
+# Ex.
+admin.server.port = 17315
+###################################################################################################

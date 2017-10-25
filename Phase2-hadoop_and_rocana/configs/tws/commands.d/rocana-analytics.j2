@@ -1,0 +1,19 @@
+#!/bin/sh
+
+#setting java home
+export JAVA_HOME="{{ java_jdk_home }}"
+
+command_project="rocana-analytics"
+command_type="java"
+command_java_opts="-Djava.net.preferIPv4Stack=true"
+
+# Uncomment the following line if you are using Kerberos
+#command_java_opts="${command_java_opts} -Djava.security.auth.login.config=$ROCANA_CONF_DIR/jaas-client.conf"
+
+# Uncomment the following line if this server is managed by Cloudera Manager and is assigned as a Hive gateway
+CLASSPATH=${CLASSPATH}:/etc/hive/conf:/etc/hadoop/conf
+
+# Uncomment the following line and change it accordingly to set the Hadoop jars on Spark's classpath.
+#export SPARK_DIST_CLASSPATH=/opt/cloudera/parcels/CDH-5.4.5-1.cdh5.4.5.p0.7/lib/hadoop/*:/opt/cloudera/parcels/CDH-5.4.5-1.cdh5.4.5.p0.7/lib/hive/lib/*
+
+command_java_main="com.rocana.consumer.analytics.AnalyticsConsumerApp"

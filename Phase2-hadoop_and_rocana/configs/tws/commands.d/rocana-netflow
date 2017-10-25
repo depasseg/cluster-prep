@@ -1,0 +1,8 @@
+#!/bin/sh
+
+command_type=bin
+
+command="$ROCANA_LIB_DIR/rocana-netflow/rocana-netflow"
+default_args="$ROCANA_CONF_DIR/rocana-netflow"
+
+export GOMAXPROCS=4

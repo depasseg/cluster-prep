@@ -1,0 +1,22 @@
+#!/bin/sh
+
+#setting java home
+export JAVA_HOME="{{ java_jdk_home }}"
+
+command_type="java"
+command_java_opts="-Djava.net.preferIPv4Stack=true"
+command_java_opts="${command_java_opts} -Djava.util.logging.config.file=$ROCANA_CONF_DIR/parquet-logging.properties"
+
+# Uncomment the following line if you are using Kerberos
+#command_java_opts="${command_java_opts} -Djava.security.auth.login.config=$ROCANA_CONF_DIR/jaas-client.conf"
+
+# Print GC debug logs, disable by default
+#command_java_opts="${command_java_opts} -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:/var/log/rocana-ops/rocana-metrics-consumer-gc-`date +'%Y%m%d%H%M'`.log"
+
+# Use G1 GC, enable by default
+command_java_opts="${command_java_opts} -XX:+UseG1GC -XX:-ResizePLAB -XX:+ParallelRefProcEnabled -XX:+AlwaysPreTouch -XX:MaxGCPauseMillis=1500 -XX:ParallelGCThreads=8 -XX:+UnlockExperimentalVMOptions -XX:G1HeapWastePercent=2 -XX:G1MixedGCLiveThresholdPercent=85 -XX:InitiatingHeapOccupancyPercent=35 -XX:MaxDirectMemorySize=8192m"
+
+# Uncomment the following line if this server is managed by Cloudera Manager and is assigned as a Hive gateway
+CLASSPATH=${CLASSPATH}:/etc/hive/conf:/etc/hadoop/conf
+
+command_java_main="com.rocana.consumer.metric.MetricsConsumerApp"

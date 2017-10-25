@@ -1,0 +1,32 @@
+---
+
+#############################################################################################
+#                                   Rocana DLM                                              #
+#############################################################################################
+
+- name: "** rocana dlm ** deploy dlm commands.d file"
+  template: src=configs/{{ cluster_name }}//commands.d/rocana-dlm.j2
+            dest=/etc/rocana-ops/commands.d/rocana-dlm
+            owner=rocana
+            group=rocana
+            mode=0644
+  tags:
+    - configure-rocana
+    - rocana-dlm
+
+- name: "** rocana dlm ** deploy rocana dlm configuration file"
+  template: src=configs/{{ cluster_name }}//rocana-dlm/dlm.properties.j2
+            dest=/etc/rocana-ops/rocana-dlm/dlm.properties
+            owner=rocana
+            group=rocana
+            mode=0644
+  tags:
+    - configure-rocana
+    - rocana-dlm
+
+- name: "** rocana dlm ** start and chkconfig on rocana-dlm"
+  service: name=rocana-dlm state=restarted enabled=yes
+  tags:
+    - rocana-consumers
+    - rocana-dlm
+

@@ -1,0 +1,9 @@
+---
+
+#- name: "** cloudera manager ** copy cloudera-manager.repo template to /etc/yum.repos.d/"
+#  template: src=cloudera-manager.repo.j2 dest=/etc/yum.repos.d/cloudera-manager.repo owner=root group=root mode=0644
+#  tags: deploy-cloudera-manager-repo
+
+- name: "** cloudera manager ** copy rocana.repo template to /etc/yum.repos.d/"
+  template: src=rocana.repo.j2 dest=/etc/yum.repos.d/rocana.repo owner=root group=root mode=0644
+  tags: deploy-rocana-repo

@@ -1,0 +1,30 @@
+---
+
+- name: "** kdc server ** copy krb-bootstrap-master scripts to kdc server"
+  copy: src=krb-bootstrap-master/ dest=/root/krb-bootstrap-master owner=root group=root mode=0644
+  when: kerberos_enabled
+  tags:
+    - enable-kerberos
+    - setup-cloudera-manager
+    
+- name: "** kdc server ** copy configure_krb5.sh to kdc-server"
+  template: src=configure_krb5.sh.j2 dest=/root/krb-bootstrap-master/configure_krb5.sh owner=root group=root mode=0700
+  when: kerberos_enabled
+  tags:
+    - enable-kerberos
+    - setup-cloudera-manager
+
+- name: "** kdc server ** execute configure_krb5.sh to configure kdc"
+  shell: "cd /root/krb-bootstrap-master; ./configure_krb5.sh"
+  when: kerberos_enabled
+  tags:
+    - enable-kerberos
+    - setup-cloudera-manager
+
+- name: "** kdc server ** set kdc password for cloudera-scm/admin"
+  shell: "echo 'cpw -pw {{ kdc_admin_password }} cloudera-scm/admin' | kadmin.local"
+  when: kerberos_enabled
+  tags:
+    - enable-kerberos
+    - setup-cloudera-manager
+

@@ -1,0 +1,261 @@
+#
+# Copyright (c) 2015 Rocana. All rights reserved.
+#
+# This is a sample Kafka Consumer configuration file. For the full documentation,
+# see the Rocana Reference Guide.
+###################################################################################################
+# Name: pipeline
+# Required: Yes
+#
+# A comma separated list of pipeline configuration names. Each pipeline
+# configuration creates one or more pipelines in the consumer based on the
+# specified number of threads. A pipeline is fully independent, with its own
+# stream from Kafka, transformation engine, and stream to the Kafka producer.
+#
+# Ex. A single pipeline called events.
+pipeline = events
+#
+# Ex. Two pipelines called events-b and events-b
+# pipeline = events-a, events-b
+###################################################################################################
+# Consumer Settings
+###################################################################################################
+# Name: pipeline.<config name>.consumer.group.id
+# Required: Yes
+#
+# The group name of this consumer. When multiple consumers are part of the same
+# group, they split up the work of taking the data. This gives you greater
+# parallelism, but means there's no global ordering of events.
+#
+# Ex.
+pipeline.events.consumer.group.id = rocana-echo
+###################################################################################################
+# Name: pipeline.<config name>.kafka.zookeeper.quorum
+# Required: Yes
+#
+# For each pipeline configuration named in the `pipeline` property, the
+# following properties are valid. Required properties are indicated as such.
+# Each property in a pipeline configuration is prefixed by the name of the
+# pipeline configuration. In this sample, we're creating an `events` pipeline
+# configuration.
+
+# A comma separated list of <hostname>:<port> of zookeeper servers where the
+# Kafka brokers are registered. It's also possible to specify an optional root
+# path in ZooKeeper after the port. This is useful when you're using a shared
+# ZooKeeper quorum with other services.
+#
+# Ex.
+pipeline.events.kafka.zookeeper.quorum = {{ zookeeper_quorum }}
+###################################################################################################
+# Name: pipeline.<config name>.topic
+# Required: Yes
+#
+# The name of the Kafka topic from which to consume events.
+#
+# Ex.
+pipeline.events.topic = raw-events
+###################################################################################################
+# Name: pipeline.<config name>.key.cache.size
+# Required: No
+#
+# The minimum number of Kafka message keys per topic-partition to cache. If a cached key is seen
+# again in the same partition the message is a duplicate, and it isn't processed. A value of 0
+# disables de-duplication and stores all messages, regardless of their key.
+#
+# Ex.
+# pipeline.events.key.cache.size = 8192
+###################################################################################################
+# Name: pipeline.<config name>.key.serializer.class
+# Name: pipeline.<config name>.serializer.class
+# Required: No
+#
+# Advanced. If the Rocana Agent is configured to use the JSON encoding, then you need to configure
+# an additional json-events pipeline. This pipeline needs to include the following serializer parameters.
+#
+# Ex.
+# pipeline.json-events.key.serializer.class = kafka.serializer.DefaultDecoder
+# pipeline.json-events.serializer.class = com.rocana.kafka.JsonEventDecoder
+#
+# If you're using Rocana Echo to replicate a topic that doesn't use either the Avro or JSON event encoding,
+# you can use the com.rocana.kafka.BytesWrapperDecoder to wrap the raw message bytes. If you also configure the
+# pipeline.<config name>.consumer.producer.serializer.class to com.rocana.kafka.BytesWrapperEncoder, you'll
+# be able to copy data from any input Kafka topic to any output Kafka topic.
+#
+# Ex.
+# pipeline.commands.serializer.class = com.rocana.kafka.BytesWrapperDecoder
+###################################################################################################
+# Name: pipeline.<config name>.dead-letter.mode
+# Required: Yes
+#
+# Dead letter mode determines what the system will do with improperly formatted events. The possible
+# values are "queue" or "drop". If "queue" is selected, then you must also specify the dead letter
+# topic, kafka brokers, and serializer class. Improperly formatted events will be placed on
+# the specified kafka topic.
+#
+# If "drop" is specified, the improperly formatted events will just be dropped.
+#
+# Ex.
+pipeline.events.dead-letter.mode = drop
+###################################################################################################
+# Name: pipeline.<config name>.dead-letter.topic
+# Required: Yes (if dead letter mode == queue)
+#
+# If dead letter mode has been set to "queue", then this will specify which kafka topic these
+# events should be placed on.
+#
+# Ex.
+# pipeline.events.dead-letter.topic = bad_events
+###################################################################################################
+# Name: pipeline.<config name>.dead-letter.producer.kafka.brokers
+# Required: Yes (if dead letter mode == queue)
+#
+# A comma separated list of <hostname>:<port> of kafka brokers to use.
+#
+# Ex.
+# pipeline.events.dead-letter.producer.kafka.brokers = {{ kafka_brokers }}
+###################################################################################################
+# Name: pipeline.<config name>.dead-letter.producer.serializer.class
+# Required: Yes (if dead letter mode == queue)
+#
+# You must configure how the events are to be encoded.
+#
+# Ex.
+# pipeline.events.dead-letter.producer.serializer.class = kafka.serializer.DefaultEncoder
+###################################################################################################
+# Producer Settings
+# This consumer writes (back) to Kafka instead of HDFS.
+# The following consumer properties are repurposed in Rocana Echo to establish Kafka
+# broker/topic/writer settings.
+###################################################################################################
+# Name: pipeline.<config name>.repo
+# Required: Yes
+#
+# A comma separated list of <hostname>:<port> of Kafka brokers which events in this pipeline
+# should be sent to
+#
+# Ex.
+pipeline.events.repo = {{ kafka_brokers }}
+###################################################################################################
+# Name: pipeline.<config name>.dataset
+# Required: Yes
+#
+# The name of the Kafka topic which events in this pipeline should be sent to.
+#
+# Ex.
+pipeline.events.dataset = events
+###################################################################################################
+# Name: pipeline.<config name>.consumer.producer.request.required.acks
+# Required: No
+# Default: 0
+#
+# What kind of acknowledgment of events sent to Kafka the producer should expect
+# from the broker.
+#  0 = Never waits for acknowledgement (NoResponse).
+#  1 = Waits for acknowledgement after the leader replica only (WaitForLocal).
+# -1 = Wait for acknowlegment from all in-sync replicas (WaitForAll).
+# Rocana advises setting this to -1 to ensure durability.
+#
+# Ex.
+# pipeline.events.consumer.producer.request.required.acks = -1
+###################################################################################################
+# Name: pipeline.<config name>.consumer.producer.key.serializer.class
+# Name: pipeline.<config name>.consumer.producer.serializer.class
+# Required: No
+# Default: Value of its respective counterpart in the consumer serializer properties
+# (pipeline.<config name>.key.serializer.class and pipeline.<config name>.serializer.class).
+#
+# This is the serializer that is used to encode the messages for transmission to the Kafka brokers specified
+# in the repo above.
+#
+# Ex.
+# pipeline.json-events.consumer.producer.key.serializer.class = kafka.serializer.DefaultEncoder
+# pipeline.json-events.consumer.producer.serializer.class = com.rocana.kafka.JsonEventEncoder
+#
+# If you're using Rocana Echo to replicate a topic that doesn't use either the Avro or JSON event encoding,
+# you can use the com.rocana.kafka.BytesWrapperEncoder to unwrap raw message bytes. If you also configure the
+# pipeline.<config name>.serializer.class to com.rocana.kafka.BytesWrapperDecoder, you'll
+# be able to copy data from any input Kafka topic to any output Kafka topic.
+#
+# Ex.
+# pipeline.commands.consumer.producer.serializer.class = com.rocana.kafka.BytesWrapperEncoder
+###################################################################################################
+# Name: pipeline.<config name>.threads
+# Required: Yes
+#
+# The number of publishing streams created for this configuration. More threads means more work is
+# performed in parallel. For a dedicated machine, you probably want at least 1
+# worker for each physical cpu core.
+#
+# Ex.
+pipeline.events.threads = 1
+############################## #####################################################################
+# Name: pipeline.<config name>.writer.batch-time-ms
+# Required: No
+#
+# The frequency with which received events are written to Kafka, in milliseconds.
+# The recommended lower bound and default is 1s (1000).
+#
+# Ex.
+# pipeline.events.writer.batch-time-ms = 1000
+###################################################################################################
+# Name: pipeline.<config name>.writer.batch-size
+# Required: No
+#
+# The maximum number of events the consumer will consume before writing the batch
+# of events to Kafka. The recommended lower bound and default is 1000.
+#
+# Ex.
+pipeline.events.writer.batch-size = 10000
+###################################################################################################
+# Name: pipeline.<config name>.writer.drop-event-types
+# Required: No
+#
+# A comma seperated list of event type IDs that should be dropped by the writer.
+# Defaults to "107" (host metrics). To keep all event types, assign this to an empty value.
+#
+# Ex.
+# pipeline.events.writer.drop-event-types = 107
+###################################################################################################
+# Name: metrics.log-report-frequency
+# Required: Yes
+#
+# The frequency at which metrics are output to the consumer logs, in seconds. If this
+# value is 0, then there will not be any metrics output to the logs.
+#
+# Ex.
+metrics.log-report-frequency = {{ metrics_report_frequency }}
+###################################################################################################
+# Name: admin.server.bind-address
+# Required: No
+# Default: 0.0.0.0
+#
+# The IP or hostname to which the admin HTTP service should bind. If set to
+# 0.0.0.0 (wildcard), the server will to all available interfaces.
+#
+# Ex.
+# admin.server.bind-address = localhost
+#
+# Ex.
+# admin.server.bind-address = consumer1234.rocana.com
+###################################################################################################
+# Name: admin.server.port
+# Required: Yes
+# Default: 17314
+#
+# The port to which the admin HTTP service should bind.
+#
+# Ex.
+admin.server.port = 17314
+###################################################################################################
+
+#
+# Kafka Consumer tuning for high load environments
+#
+pipeline.events.consumer.rebalance.max.retries = 24
+pipeline.events.consumer.rebalance.backoff.ms = 5000
+pipeline.events.consumer.producer.message.send.max.retries = 15
+pipeline.events.consumer.producer.reconnect.backoff.ms = 10000
+pipeline.events.consumer.producer.retry.backoff.ms = 1000
+pipeline.events.consumer.producer.compression.codec=snappy
+pipeline.events.consumer.producer.compression.type=snappy
+pipeline.events.consumer.producer.compressed.topics=events

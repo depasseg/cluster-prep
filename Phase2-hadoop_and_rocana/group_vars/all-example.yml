@@ -1,0 +1,235 @@
+---
+
+# This should match the rocana base-dir/version.  On the repository server, this will be
+# CDH: <html root>/rocana-2.1.2
+# HDP: <html root>/rocana-2.1.2-hdp2.3.0
+# CDH Rocana: 2.1.2
+# HDP Rocana: 2.1.2-hdp2.3.0
+rocana_version: 2.1.3
+
+# Yum repository server.  This should have a rocana-<version> repository and a rocana-tools repo.
+# at this time,  rocana-tools should have the JDK
+reposerver: 192.168.0.170
+
+# java_jdk_home is used to update alternatives on the host
+# jdk package name is the yum package name
+java_jdk_home: /usr/java/latest
+jdk_package_name: jdk1.8.0_131
+
+#internet python pip available. If set to true, then the playbooks yum install python-pip from the EPEL.
+# if set to false, the only required package is the cm_api from Cloudera. https://cloudera.github.io/cm_api/
+# if set to false, then the python-pip EPEL package will not be installed, but the playbooks will expect
+# an rpm created from the cm_api using setuptools.  This can be modified to match the environment easily in
+# roles/cm-server/tasks/pkgs.yml.  If you want to bypass this altogether, on your targeted CM Server, install
+# the Python cm_api package pre-run and comment out the task steps noted in the pkgs.yml
+internet_pip_available: true
+
+# set to HDP or CDH depending on which cluster type
+hadoop_distribution: CDH
+
+# Kerberos Section - DEV ONLY - Rocana configurations will need modification post-install
+kerberos_enabled: false
+kerberos_realm: ROCANA.COM
+rocana_keytab: /opt/rocana/rocana.keytab
+rocana_kerberos_principal: rocana@'{{ kerberos_realm }}'
+# comma separated list of encoding types.
+# If using AES256, be sure to install a jdk with unlimited strength policy files
+krb_encoding_types: rc4-hmac
+kdc_admin_password: password
+# End Kerberos Section
+
+#### Modify this URL to match your Cloudera Manager Repo.  CM 5.9+ Follow Cloudera documentation to match CM versions to CDH versions
+cloudera_manager_repo: https://archive.cloudera.com/cm5/redhat/{{ ansible_distribution_major_version }}/x86_64/cm/5/
+cloudera_manager_gpgkey: https://archive.cloudera.com/cm5/redhat/{{ ansible_distribution_major_version }}/x86_64/cm/RPM-GPG-KEY-cloudera
+
+# This should map to your CDH5.8+, Kafka 0.8.2 - 0.9 parcel repository
+cdh_parcel_repo_url: http://archive.cloudera.com/cdh5/parcels/5.10.1.41/
+kafka_parcel_repo_url: https://archive.cloudera.com/kafka/parcels/2.0.2/
+
+# parcel name
+cdh_parcel_version: 5.10.1-1.cdh5.10.1.p0.41
+kafka_parcel_version: 2.0.2-1.2.0.2.p0.5
+
+cm_server: "{{ groups['cluster-management-server'][0] }}"
+cm_enterprise_license: false
+#### Cloudera Manager database passwords.  amon, scm, and rman
+scm_password: scm1234
+rman_password: rman1234
+amon_password: amon1234
+
+############ HDP Section ############
+##### Modify this URL to 6 or 7 depending on your deployment
+ambari_repo: http://public-repo-1.hortonworks.com/ambari/centos{{ ansible_distribution_major_version }}/2.x/updates/2.2.1.1
+ambari_repo_gpgkey: http://public-repo-1.hortonworks.com/ambari/centos{{ ansible_distribution_major_version }}/RPM-GPG-KEY/RPM-GPG-KEY-Jenkins
+ambari_server: "{{ groups['cluster-management-server'][0] }}"
+
+
+hdp_version: 2.3
+hdp_full_version: 2.3.4.0-3485
+# HDP Repo and Utils Repo
+hdp_repo_url: http://public-repo-1.hortonworks.com/HDP/centos{{ansible_distribution_major_version}}/2.x/updates/2.3.4.0
+hdp_utils_repo_url: http://public-repo-1.hortonworks.com/HDP-UTILS-1.1.0.20/repos/centos{{ ansible_distribution_major_version }}
+
+#### Ambari database information
+ambari_password: ambari1234
+
+###### END HDP ###########
+
+#### Postgres server, automatically filled in from hosts (ansible     inventory file)
+postgres_server: "{{ groups['postgres-server'][0] }}"
+
+# this should be the /16 or /24 CIDR range for your postgres server to allow access.  e.g. 10.142.0.0/16>
+# This is handy for CIDR blocks: https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing#IPv4_CIDR_blocks
+pg_allowed_cidr_range: 10.0.0.0/8
+
+#### General DB users (hive and rocana)
+metastore_password: metastore1234
+rocana_password: rocana1234
+
+#### Rocana Dataset Namespace
+rocana_namespace: default
+
+# the interval the rocana services log metrics to their log file (in seconds)
+metrics_report_frequency: 0
+
+# sets a general kafka replication factor for the cluster.  This is also used in the events_min_in_sync_replicas
+# parameter near the bottom of this file
+# this can be overriden per individual topics (see below)
+kafka_replication_factor: 3
+
+# This is a hashmap of topics.  You can add additional topics for creation by adding to the hashmap
+# The kafka topic creation will iterate through this list and create the topics.
+# NOTE: min.insync.replicas will be set for all of these topics, so be careful with replication factor and
+# min.insync calcuation (search for insync in the doc)
+all_kafka_topics:
+    events:
+        partitions: "{{ groups['hadoop-dn'] | length }}"
+        replication_factor: "{{ kafka_replication_factor }}"
+
+    raw-events:
+        partitions: "{{ groups['hadoop-dn'] | length }}"
+        replication_factor: "{{ kafka_replication_factor }}"
+
+    commands:
+        partitions: 1
+        replication_factor: "{{ kafka_replication_factor }}"
+
+    rocana-search-metadata:
+        partitions: 1
+        replication_factor: "{{ kafka_replication_factor }}"
+
+
+# Set the Rocana Search JVM Xmx/Xms.  This should be standard java notation for those args.
+# e.g. 30g, 512m, etc.
+# Starting size (Xms) and max size (Xmx) will be set the same. further modifications can be made in
+# configs/<cluster_name>/rocana-search/commands.d/rocana-search.j2
+rocana_search_heap_size: 30g
+
+# Supervisor and Agent Run As User.  Defaults to the rocana user.
+# to easily tail system logs (cron, secure, messages), change to root.
+rocana_supervisor_user: rocana
+rocana_agent_user: rocana
+
+# Scheduler Configs
+# action engine jvm memory setting
+action_engine_executor_memory: "4g"
+
+# rules engine jvm memory setting
+rules_engine_executor_memory: "4g"
+
+spark_version: "1.6.2"
+
+# Hadoop config details for Hadrian
+# This doubles as the nameservice in HDFS HA
+#  NOTE: This is SUPER important. For CDH Deployments, if you change the cluster name, the configs in
+#        configs/<cluster_name> need to exist.
+#        So rename the example dir to your new cluster directory name.
+
+# For Ambari based deployments, the clustername should match what you set for your HDFS HA
+# namespace. If you don't set this to match your namespace, the Rocana set up will fail.
+cluster_name: example
+
+# Whether HDFS HA should be enabled.  true or false
+# Must be all lowercase.  Otherwise the the kite repos will fail when trying to create them.
+hdfs_ha: true
+
+# HDP memory limit for impala worker nodes.  This is in BYTES
+impala_hdp_mem_limit: 8598323200
+
+###### List of Datanodes ######
+# this uses the ansible inventory file to generate a list of all datanodes in the cluster
+# by default, all datanodesa are assigned to a single rack
+# large clusters should modify the rack location in either the hadrian cluster specs file
+# configs/<cluster_name>/hadrian/cluster_specs.ini for CDH.
+# hadrian-hdp currently supports only one rack, so post deployment of HDP changes are required
+datanodes: "{{ groups['hadoop-dn'][0:] | join(',') }}"
+
+#################################################################################################
+# This flag is for optional stuff that users might not want on their system.                    #
+#################################################################################################
+# Helper tools installs the following (some from epel):  htop, iftop, nc, nethogs, pigz, smartmontools, tmux
+helper_tools: true
+
+#################################################################################################
+# This section, while required, is driven by your ansible inventory file.  No changes should be #
+# required beyond this point. Let's cue some auto-magic.                                     #
+#################################################################################################
+master_cli_hosts: "{{ groups['hadoop-hn'][0:] | join(',') }}"
+namenode_host: "{{ groups['namenode'][0] }}"
+secondary_namenode_host: "{{ groups['secondary-namenode'][0] }}"
+journalnode_hosts: "{{ groups['zk-jn'][0:] | join(',') }}"
+impala_master_host: "{{ groups['impala-master'][0] }}"
+impala_host: "{{ groups['hadoop-dn'][0] }}"
+zookeeper_hosts: "{{ groups['zk-jn'][0:] | join(',') }}"
+kafka_broker_hosts: "{{ groups['kafka-brokers'][0:] | join(',') }}"
+resource_manager_host: "{{ groups['resource-manager'][0] }}"
+hive_metastore_server: "{{ groups['hive-metastore'][0] }}"
+
+#### Rocana Common Configs ####
+# ZK is used for HDFS HA in HDP as well
+zookeeper_quorum: "{{ groups['zk-jn'][0:] | join(':2181,') }}:2181"
+kafka_brokers: "{{ groups['kafka-brokers'][0:] | join(':9092,') }}:9092"
+events_min_in_sync_replicas: "{{ kafka_replication_factor / 2 | round(method='floor') + 1 }}"
+
+#### Rocana Data (Kite) Repository paths are defined below.
+# repos are defined once since hive and hdfs repos are consistent.  Later, repos are assigned to logical
+# names based on what was auto selected for hdfs_ha true/false
+# you can override that below if you don't want the repos in the default location. ditto for search.
+
+hdfs_root:
+   true: "{{ cluster_name }}"
+   false: "{{ namenode_host }}:8020"
+
+hive_repo:
+   true: "repo:hive://{{ hive_metastore_server }}:9083/datasets/rocana?hdfs-host={{ cluster_name }}"
+   false: "repo:hive://{{ hive_metastore_server }}:9083/datasets/rocana?hdfs-host={{ namenode_host }}&hdfs-port=8020"
+
+hdfs_repo:
+   true: "repo:hdfs://{{ cluster_name }}/datasets/rocana"
+   false: "repo:hdfs://{{ namenode_host }}:8020/datasets/rocana"
+
+search_root:
+   true: "hdfs://{{ cluster_name }}/datasets/rocana/search"
+   false: "hdfs://{{ namenode_host }}:8020/datasets/rocana/search"
+
+dlm_temp_repo: "{{ hdfs_repo[hdfs_ha] }}"
+events_repo: "{{ hive_repo[hdfs_ha] }}"
+metrics_repo: "{{ hive_repo[hdfs_ha] }}"
+anomalies_repo: "{{ hive_repo[hdfs_ha] }}"
+
+#### handles different paths for CDH vs. HDP for kafka-topics
+vendor_kafka_topics_command:
+   HDP: "/usr/hdp/current/kafka-broker/bin/kafka-topics.sh"
+   hdp: "/usr/hdp/current/kafka-broker/bin/kafka-topics.sh"
+   CDH: "kafka-topics"
+   cdh: "kafka-topics"
+
+kafka_topics_command: "{{ vendor_kafka_topics_command[hadoop_distribution] }}"
+
+# QJM shared edits string Used for HDP HDFS HA
+qjm_shared_edits_dir: "qjournal://{{ groups['zk-jn'][0:] | join(':8485;') }}:8485/{{ cluster_name }}"
+
+# added to support rocana-manager scripts
+# setting to false by default so that users can set at runtime
+hard_kill: false
+service_state: started

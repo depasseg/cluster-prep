@@ -1,0 +1,31 @@
+---
+
+#- hosts: postgres-server
+#  gather_facts: yes
+#  roles:
+#    - postgres-server
+
+- hosts: cluster-management-all
+  gather_facts: yes
+  roles:
+    - { role: hadoop-prep, when: hadoop_distribution|upper == 'CDH' }
+    - { role: cm-all, when: hadoop_distribution|upper == 'CDH' }
+
+- hosts: cluster-management-server
+  gather_facts: yes
+  roles:
+    - { role: hadoop-prep, when: hadoop_distribution|upper == 'CDH' }
+    - { role: cm-server, when: hadoop_distribution|upper == 'CDH' }
+
+- hosts: cluster-management-all
+  gather_facts: yes
+  roles:
+    - { role: hadoop-prep, when: hadoop_distribution|upper == 'HDP' }
+    - { role: ambari-all, when: hadoop_distribution|upper == 'HDP' }
+
+- hosts: cluster-management-server
+  gather_facts: yes
+  roles:
+    - { role: hadoop-prep, when: hadoop_distribution|upper == 'HDP' }
+    - { role: ambari-server, when: hadoop_distribution|upper == 'HDP' }
+

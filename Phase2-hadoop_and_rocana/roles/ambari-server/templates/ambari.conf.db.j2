@@ -1,0 +1,19 @@
+
+#####   Added by Ansible because ambari-server setup, non-interactive is broken.
+java.home=/usr/java/latest
+server.jdbc.database_name=ambari
+server.jdbc.database=postgres
+server.jdbc.driver=org.postgresql.Driver
+server.jdbc.hostname={{ postgres_server }}
+server.jdbc.port=5432
+server.jdbc.postgres.schema=ambari
+server.jdbc.rca.driver=org.postgresql.Driver
+server.jdbc.rca.url=jdbc:postgresql://{{ postgres_server }}:5432/ambari
+server.jdbc.rca.user.name=ambari
+server.jdbc.rca.user.passwd=/etc/ambari-server/conf/password.dat
+server.jdbc.url=jdbc:postgresql://{{ postgres_server }}:5432/ambari
+server.jdbc.user.name=ambari
+server.jdbc.user.passwd=/etc/ambari-server/conf/password.dat
+server.os_family={{ ansible_os_family|lower }}{{ ansible_distribution_major_version }}
+server.os_type={{ ansible_distribution|lower }}{{ ansible_distribution_major_version }}
+server.persistence.type=remote

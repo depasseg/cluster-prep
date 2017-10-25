@@ -1,0 +1,4 @@
+---
+- include: pkgs.yml
+- include: ambari-server.yml
+- include: ambari-blueprint.yml

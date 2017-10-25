@@ -1,0 +1,32 @@
+---
+
+#############################################################################################
+#                                   Rocana HDFS Consumer                                    #
+#############################################################################################
+
+- name: "** rocana hdfs consumer ** deploy hdfs consumer commands.d file"
+  template: src=configs/{{ cluster_name }}//commands.d/rocana-hdfs-consumer.j2
+            dest=/etc/rocana-ops/commands.d/rocana-hdfs-consumer
+            owner=rocana
+            group=rocana
+            mode=0644
+  tags:
+    - configure-rocana
+    - rocana-hdfs-consumer
+
+
+- name: "** rocana hdfs consumer ** deploy hdfs consumer configuration file"
+  template: src=configs/{{ cluster_name }}//rocana-hdfs-consumer/hdfs-consumer.properties.j2
+            dest=/etc/rocana-ops/rocana-hdfs-consumer/hdfs-consumer.properties
+            owner=rocana
+            group=rocana
+            mode=0644
+  tags:
+    - configure-rocana
+    - rocana-hdfs-consumer
+
+- name: "** rocana hdfs consumer ** start and chkconfig on rocana-hdfs-consumer"
+  service: name=rocana-hdfs-consumer state=restarted enabled=yes
+  tags:
+    - rocana-consumers
+    - rocana-hdfs-consumer

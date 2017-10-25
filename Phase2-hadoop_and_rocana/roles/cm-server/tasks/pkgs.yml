@@ -1,0 +1,43 @@
+---
+
+- name: "** install JDK ** ensure jdk is installed on cm server host."
+  yum: name={{ jdk_package_name }} state=latest
+  tags: install-cm-server
+  
+- name: "** cloudera manager ** install required packages"
+  yum: name=cloudera-manager-server state=latest
+  tags: install-cm-pkgs
+
+#
+# This section handles installing the cm_api via pip or rpm.  Modify to match
+# your environment accordingly.
+#
+- name: "** cloudera manager ** install python-pip for online installation"
+  yum: name=python-pip state=latest
+  when: internet_pip_available
+  tags: install-cm-pkgs
+
+- name: "** hadrian ** install cm_api"
+  command: pip install cm_api
+  when: internet_pip_available
+  tags: install-cm-packages
+
+- name: "** cloudera manager ** install cm_api rpm for offline installation"
+  yum: name=cm_api state=latest
+  when: not internet_pip_available
+  tags: install-cm-pkgs
+#
+# END pip/cm_api section
+#
+
+- name: "** kdc-server ** install kerberos packages"
+  yum: name={{ item }} state=latest
+  with_items:
+    - krb5-devel
+    - krb5-workstation
+    - krb5-libs
+    - krb5-server
+  when: kerberos_enabled
+  tags:
+    - install-sys-pkgs
+    - install-krb-pkgs

@@ -1,0 +1,53 @@
+---
+
+#############################################################################################
+#                                   Rocana Echo                                             #
+#############################################################################################
+
+- name: "** rocana echo ** deploy echo commands.d file"
+  template: src=configs/{{ cluster_name }}//commands.d/rocana-echo.j2
+            dest=/etc/rocana-ops/commands.d/rocana-echo
+            owner=rocana
+            group=rocana
+            mode=0644
+  tags:
+    - configure-rocana
+    - rocana-echo
+
+- name: "** rocana echo  ** deploy rocana echo configuration file"
+  template: src=configs/{{ cluster_name }}//rocana-echo/echo.properties.j2
+            dest=/etc/rocana-ops/rocana-echo/echo.properties
+            owner=rocana
+            group=rocana
+            mode=0644
+  tags:
+    - rocana-consumers
+    - deploy-transformations
+    - rocana-echo
+
+
+- name: "** rocana echo ** create transformation directory"
+  file: path=/etc/rocana-ops/transformation owner=rocana group=rocana mode=0755 state=directory
+  tags:
+    - rocana-consumers
+    - deploy-transformations
+    - rocana-echo
+    - create-dir
+
+#- name: "** rocana echo  ** deploy rocana echo transformations"
+#  synchronize: src=configs/{{ cluster_name }}/transformations
+#               dest=/etc/rocana-ops
+#               times=yes
+#  tags:
+#    - rocana-consumers
+#    - deploy-transformations
+#    - rocana-echo
+
+- name: "** rocana echo ** start and chkconfig on rocana-echo"
+  service: name=rocana-echo state=restarted enabled=yes
+  tags:
+    - rocana-consumers
+    - deploy-transformations
+    - rocana-echo
+
+

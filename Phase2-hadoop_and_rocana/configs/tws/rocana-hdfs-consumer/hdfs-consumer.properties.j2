@@ -1,0 +1,278 @@
+#
+# Copyright (c) 2015 Rocana. All rights reserved.
+#
+# This is a sample HDFS Consumer configuration file. For the full documentation,
+# see the Rocana Reference Guide.
+#
+###################################################################################################
+# Name: kerberos.principal
+# Required: Yes (in a kerberos environment)
+#
+# When the consumer is run in a kerberos secured environment, you must specify an hdfs principal
+# and keytab that can be used to proxy the users specified for each pipeline.
+#
+# Ex.
+# kerberos.principal = {{ rocana_kerberos_principal }}
+###################################################################################################
+# Name: kerberos.principal.keytab
+# Required: Yes (in a kerberos environment)
+#
+# If running in a kerberos secured environment you need to specify the location of the keytab for the
+# superuser to authenticate with.
+#
+# Ex.
+# kerberos.principal.keytab = {{ rocana_keytab }}
+###################################################################################################
+# A comma separated list of pipeline configuration names. Each pipeline
+# configuration creates one or more pipelines in the consumer based on the
+# specified number of threads. A pipeline is fully independent, with its own
+# stream from Kafka, transformation engine, and stream to HDFS.
+#
+# This property only declares the pipeline configuration name. Once declared,
+# the pipeline configuration properties must be specified. See later in this
+# file for an example.
+#
+# Name: pipeline
+# Required: Yes
+#
+# Ex. A single pipeline called events.
+pipeline = events, anomalies
+#
+# Ex. Two pipelines called events-b and events-b
+# pipeline = events-a, events-b
+###################################################################################################
+# Name: pipeline.<config name>.kafka.zookeeper.quorum
+# Required: Yes
+#
+# For each pipeline configuration named in the `pipeline` property, the
+# following properties are valid. Required properties are indicated as such.
+# Each property in a pipeline configuration is prefixed by the name of the
+# pipeline configuration. In this sample, we're creating an `events` pipeline
+# configuration.
+
+# A comma separated list of <hostname>:<port> of zookeeper servers where the
+# Kafka brokers are registered. It's also possible to specify an optional root
+# path in ZooKeeper after the port. This is useful when you're using a shared
+# ZooKeeper quorum with other services.
+#
+# Ex.
+pipeline.events.kafka.zookeeper.quorum = {{ zookeeper_quorum }}
+###################################################################################################
+# Name: pipeline.<config name>.topic
+# Required: Yes
+#
+# The name of the Kafka topic from which to consume events.
+#
+# Ex.
+pipeline.events.topic = events
+###################################################################################################
+# Name: pipeline.<config name>.repo
+# Required: Yes
+#
+# The location of the dataset repository containing this pipeline's dataset.
+#
+# Ex. Look for datasets in HDFS under /datasets/rocana.
+pipeline.events.repo = {{ events_repo }}
+###################################################################################################
+# Name: pipeline.<config name>.namespace
+# Required: No
+# Default: default
+#
+# The namespace of the dataset repository containing this pipeline's dataset.
+#
+# Ex. Look for datasets in the rocana namespace
+# pipeline.events.namespace = {{ rocana_namespace }}
+###################################################################################################
+# Name: pipeline.<config name>.dataset
+# Required: Yes
+#
+# The name of the dataset to which events in this pipeline should be written.
+# This dataset must already exist. To create a dataset, see the rocana-data command.
+#
+# Ex.
+pipeline.events.dataset = events
+###################################################################################################
+# Name: pipeline.<config name>.consumer.group.id
+# Required: Yes
+#
+# The group name of this consumer. When multiple consumers are part of the same
+# group, they split up the work of taking the data. This gives you greater
+# parallelism, but means there's no global ordering of events.
+#
+# Ex.
+pipeline.events.consumer.group.id = hdfs-consumer
+###################################################################################################
+# Name: pipeline.<config name>.key.cache.size
+# Required: No
+#
+# The minimum number of Kafka message keys per topic-partition to cache. If a cached key is seen
+# again in the same partition the message is a duplicate, and it isn't processed. A value of 0
+# disables de-duplication and stores all messages, regardless of their key.
+#
+# Ex.
+# pipeline.events.key.cache.size = 8192
+##################################################################################################
+# Name: pipeline.<config name>.username
+# Required: Yes (in a kerberos environment)
+#
+# When the consumer is run in a kerberos secured environment each pipeline can write as a different
+# user. Alternatively, the user can be arbitrarily overridden when running outside of a kerberos
+# environment.
+#
+# Ex.
+# pipeline.events.username = {{ rocana_kerberos_principal }}
+###################################################################################################
+# Name: pipeline.<config name>.key.serializer.class
+# Name: pipeline.<config name>.serializer.class
+# Required: No
+#
+# Advanced. If the Rocana-Agent is configured to use the JSON encoding, then you need to configure
+# an additional json-events pipeline. This pipeline needs to include the following serializer parameters.
+#
+# Ex.
+# pipeline.json-events.key.serializer.class = kafka.serializer.DefaultDecoder
+# pipeline.json-events.serializer.class = com.rocana.kafka.JsonEventDecoder
+###################################################################################################
+# Name: pipeline.<config name>.threads
+# Required: Yes
+#
+# The number of pipelines created with this configuration. For each thread there
+# will be a separate Kafka stream/HDFS stream. More threads means more work is
+# performed in parallel. For a dedicated machine, you probably want at least 1
+# worker for each physical cpu core.
+#
+# Ex.
+pipeline.events.threads = 1
+###################################################################################################
+# Name: pipeline.<config name>.dead-letter.mode
+# Required: Yes
+#
+# Dead letter mode determines what the system will do with improperly formatted events. The possible
+# values are "queue" or "drop". If "queue" is selected, then you must also specify the dead letter
+# topic, kafka brokers, and serializer class. Improperly formatted events will be placed on
+# the specified kafka topic.
+#
+# If "drop" is specified, the improperly formatted events will just be dropped.
+#
+# Ex.
+pipeline.events.dead-letter.mode = drop
+###################################################################################################
+# Name: pipeline.<config name>.dead-letter.topic
+# Required: Yes (if dead letter mode == queue)
+#
+# If dead letter mode has been set to "queue", then this will specify which kafka topic these
+# events should be placed on.
+#
+# Ex.
+# pipeline.events.dead-letter.topic = bad_events
+###################################################################################################
+# Name: pipeline.<config name>.dead-letter.producer.kafka.brokers
+# Required: Yes (if dead letter mode == queue)
+#
+# A comma separated list of <hostname>:<port> of kafka brokers to use.
+#
+# Ex.
+# pipeline.events.dead-letter.producer.kafka.brokers = {{ kafka_brokers }}
+###################################################################################################
+# Name: pipeline.<config name>.dead-letter.producer.serializer.class
+# Required: Yes (if dead letter mode == queue)
+#
+# You must configure how the events are to be encoded.
+#
+# Ex.
+# pipeline.events.dead-letter.producer.serializer.class = kafka.serializer.DefaultEncoder
+###################################################################################################
+# Name: pipeline.<config name>.writer.batch-time-ms
+# Required: No
+#
+# The frequency with which received events are written to HDFS, in milliseconds.
+# The recommended lower bound and default is 1s (1000). Note that files in HDFS are only
+# rolled based on commit time, not batches.
+#
+# Ex.
+# pipeline.events.writer.batch-time-ms = 1000
+###################################################################################################
+# Name: pipeline.<config name>.writer.batch-size
+# Required: No
+#
+# The maximum number of events the consumer will consume before writing the batch of events to HDFS.
+# The recommended lower bound and default is 1000. Note that files in HDFS are only
+# rolled based on commit time, not batches.
+#
+# Ex.
+pipeline.events.writer.batch-size = 10000
+###################################################################################################
+# Name: pipeline.<config name>.writer.commit-time-ms
+# Required: No
+#
+# The frequency with which files in HDFS are rolled, in milliseconds. The recommended lower bound and
+# default is 10m (600000) and the interval must be >= 10s (10000).
+#
+# Ex.
+# pipeline.events.writer.commit-time-ms = 600000
+###################################################################################################
+# Name: pipeline.<config name>.writer.drop-event-types
+# Required: No
+#
+# A comma seperated list of event type IDs that should be dropped by the writer.
+# Defaults to "107" (host metrics). To keep all event types, assign this to an empty value.
+#
+# Ex.
+# pipeline.events.writer.drop-event-types = 107
+###################################################################################################
+# Name: metrics.log-report-frequency
+# Required: Yes
+#
+# The frequency at which metrics are output to the consumer logs, in seconds. If this
+# value is 0, then there will not be any metrics output to the logs.
+#
+# Ex.
+metrics.log-report-frequency = {{ metrics_report_frequency }}
+###################################################################################################
+# Name: admin.server.bind-address
+# Required: No
+# Default: 0.0.0.0
+#
+# The IP or hostname to which the admin HTTP service should bind. If set to
+# 0.0.0.0 (wildcard), the server will bind to all available interfaces.
+#
+# Ex.
+# admin.server.bind-address = localhost
+#
+# Ex.
+# admin.server.bind-address = consumer1234.rocana.com
+###################################################################################################
+# Name: admin.server.port
+# Required: Yes
+# Default: 17310
+#
+# The port to which the admin HTTP service should bind.
+#
+# Ex.
+admin.server.port = 17310
+###################################################################################################
+#
+# Kafka Consumer tuning
+#
+pipeline.events.consumer.rebalance.max.retries = 24
+pipeline.events.consumer.rebalance.backoff.ms = 5000
+
+#
+#  Anomalies Section
+#
+pipeline.anomalies.kafka.zookeeper.quorum = {{ zookeeper_quorum }}
+pipeline.anomalies.topic = events
+pipeline.anomalies.repo = {{ anomalies_repo }}
+# pipeline.anomalies.namespace = {{ rocana_namespace }}
+pipeline.anomalies.dataset = anomalies
+pipeline.anomalies.consumer.group.id = anomalies-hdfs-consumer
+pipeline.anomalies.threads = 4
+pipeline.anomalies.key.cache.size = 0
+pipeline.anomalies.writer.commit-time-ms = 60000
+pipeline.anomalies.writer.batch-time-ms = 60000
+pipeline.anomalies.dead-letter.mode = drop
+pipeline.anomalies.transformer.class = com.rocana.consumer.analytics.anomaly.AnomalyTransformer
+pipeline.anomalies.consumer.rebalance.max.retries = 24
+pipeline.anomalies.consumer.rebalance.backoff.ms = 5000
+
+

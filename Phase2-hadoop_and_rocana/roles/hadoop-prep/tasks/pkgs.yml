@@ -1,0 +1,49 @@
+---
+
+- name: "** hadoop ** clean repo data prior to package installation"
+  command: yum clean all
+  
+
+- name: "** hadoop ** install useful packages from base/updates - will continue on error"
+  yum: name={{ item }} state=latest
+  with_items:
+    - lsof
+    - mcelog
+    - ntp
+    - ntpdate
+    - strace
+    - sysstat
+    - tree
+    - unzip
+    - wget
+    - zip
+  ignore_errors: yes
+  tags: install-sys-pkgs 
+
+- name: "** hadoop ** install useful helper packages (some from epel) - will continue on error"
+  yum: name={{ item }} state=latest
+  with_items:
+    - iotop
+    - iftop
+    - htop
+    - iftop
+    - nc
+    - nethogs
+    - pigz
+    - smartmontools
+    - tmux
+  ignore_errors: yes
+  when: helper_tools
+  tags: install-sys-pkgs
+  
+- name: "** hadoop ** install kerberos packages (when kerberos_enabled = true)"
+  yum: name={{ item }} state=latest
+  with_items:
+    - krb5-devel
+    - krb5-workstation
+    - krb5-libs
+  when: kerberos_enabled
+  tags:
+    - install-sys-pkgs
+    - install-krb-pkgs
+

@@ -1,0 +1,31 @@
+---
+
+#############################################################################################
+#                                   Rocana Metrics Consumer                                 #
+#############################################################################################
+
+- name: "** rocana metrics consumer ** deploy metrics consumer commands.d file"
+  template: src=configs/{{ cluster_name }}/commands.d/rocana-metrics-consumer.j2
+            dest=/etc/rocana-ops/commands.d/rocana-metrics-consumer
+            owner=rocana
+            group=rocana
+            mode=0644
+  tags:
+    - configure-rocana
+    - rocana-metadata-consumer
+
+- name: "** rocana metrics consumer ** deploy metrics consumer configuration file"
+  template: src=configs/{{ cluster_name }}/rocana-metrics-consumer/metrics-consumer.properties.j2
+            dest=/etc/rocana-ops/rocana-metrics-consumer/metrics-consumer.properties
+            owner=rocana
+            group=rocana
+            mode=0644
+  tags:
+    - configure-rocana
+    - rocana-metrics-consumer
+
+- name: "** rocana metrics consumer ** start and chkconfig on rocana-metric-consumer"
+  service: name=rocana-metrics-consumer state=restarted enabled=yes
+  tags:
+    - configure-rocana
+    - rocana-metrics-consumer

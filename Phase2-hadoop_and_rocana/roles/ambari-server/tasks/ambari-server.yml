@@ -1,0 +1,58 @@
+---
+
+- name: "** postgres server ** deploy pgpass file for root user"
+  template: src=pgpass.j2 dest=/root/.pgpass owner=root group=root mode=0600
+  tags: setup-ambari-server
+
+- name: "** postegres server ** create users and grants"
+  shell: /usr/bin/psql -d ambari -U ambari -h {{ postgres_server }} < /var/lib/ambari-server/resources/Ambari-DDL-Postgres-CREATE.sql
+  tags: setup-ambari-server
+
+- name: "** ambari-server ** ensure /usr/share/java exists"
+  file: path=/usr/share/java owner=root group=root mode=0755 state=directory
+  tags: setup-ambari-server
+
+- name: "** ambari-server ** stage postgres-jdbc jar in /usr/share/java"
+  shell: cp /usr/lib/ambari-server/postgresql*-jdbc4.jar /usr/share/java/postgresql-jdbc.jar
+  tags: setup-ambari-server
+
+- name: "** ambari server ** prepare ambari"
+  shell: /usr/sbin/ambari-server setup -j /usr/java/latest --database=postgres --databasehost={{ postgres_server }} --databaseport=5432 --databasename=ambari --postgresschema=ambari --databaseusername=ambari --databasepassword={{ ambari_password }} --jdbc-db=postgres --jdbc-driver=/usr/share/java/postgresql-jdbc.jar
+  tags: setup-ambari-server
+
+- name: "** ambari server ** copy ambari.conf.db to ambari-server"
+  template: src=ambari.conf.db.j2 dest=/etc/ambari-server/conf/ambari.conf.db owner=root group=root mode=0644
+  tags: setup-ambari-server
+
+- name: "** ambari server ** prepare ambari add the missing configs to ambari properties because ambari is awesome like that"
+  template: src=ambari.conf.db.j2 dest=/etc/ambari-server/conf/ambari.conf.db owner=root group=root mode=0644
+  tags: setup-ambari-server
+
+# another workaround because ambari is awesome
+- name: "** ambari server ** copy password.dat to ambari-server config directory."
+  template: src=ambari-password.dat.j2 dest=/etc/ambari-server/conf/password.dat owner=root group=root mode=0640
+  tags: setup-ambari-server
+
+- name: "** ambari server ** check for the backup original config"
+  stat: path=/etc/ambari-server/conf/ambari.properties.original
+  register: original_ambari_config
+  tags: setup-ambari-server
+
+- name: "** ambari server ** backup existing config"
+  command: cp -p /etc/ambari-server/conf/ambari.properties /etc/ambari-server/conf/ambari.properties.original
+  when: original_ambari_config.stat.exists == False
+  tags: setup-ambari-server
+
+# This is so lame and it's totally ambari's fault. The ambari-server setup script doesn't save db configs to the ambari
+# properties file.  It doesn't add java_home either.
+- name: "** ambari server ** merge configs"
+  shell: cat /etc/ambari-server/conf/ambari.properties.original /etc/ambari-server/conf/ambari.conf.db > /etc/ambari-server/conf/ambari.properties
+  tags: setup-ambari-server
+
+- name: "** ambari server ** start ambari server server"
+  service: name=ambari-server state=started enabled=true pattern="org.apache.ambari.server.controller.AmbariServer"
+  tags: setup-ambari-server
+
+- name: "** ambari server ** wait for ambari server to become available"
+  wait_for: port=8080 state=started delay=30
+  tags: setup-ambari-server

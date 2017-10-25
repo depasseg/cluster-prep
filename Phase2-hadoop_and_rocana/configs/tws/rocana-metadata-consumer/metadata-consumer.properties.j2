@@ -1,0 +1,215 @@
+#
+# Copyright (c) 2015 Rocana. All rights reserved.
+#
+# This is a sample Metadata Consumer configuration file. For the full documentation,
+# see the Rocana Reference Guide.
+#
+###################################################################################################
+# Name: jdbc.url
+# Required: Yes
+#
+# The Metadata Consumer requires access to the same PostgreSQL 8+ database as the webapp. The jdbc.url specifies
+# which database to connect to. This database must be setup prior to starting the Metadata Consumer by
+# starting the webapp.
+#
+# Ex.
+jdbc.url = jdbc:postgresql://{{ postgres_server }}:5432/rocana
+###################################################################################################
+# Name: jdbc.user
+# Required: Yes
+#
+# The user name to connect to the database with.
+#
+# Ex.
+jdbc.user = rocana
+###################################################################################################
+# Name: jdbc.password
+# Required: Yes
+#
+# The password to connect to the database with.
+#
+# Ex.
+jdbc.password = {{ rocana_password }}
+###################################################################################################
+# A comma separated list of pipeline configuration names. Each pipeline
+# configuration creates one or more pipelines in the consumer based on the
+# specified number of threads. A pipeline is fully independent, with its own
+# stream from Kafka, transformation engine, and stream to the database.
+#
+# This property only declares the pipeline configuration name. Once declared,
+# the pipeline configuration properties must be specified. See later in this
+# file for an example.
+#
+# Name: pipeline
+# Required: Yes
+#
+# Ex. A single pipeline called events.
+pipeline = events
+#
+# Ex. Two pipelines called events-b and events-b
+# pipeline = events-a, events-b
+###################################################################################################
+# Name: pipeline.<config name>.kafka.zookeeper.quorum
+# Required: Yes
+#
+# For each pipeline configuration named in the `pipeline` property, the
+# following properties are valid. Required properties are indicated as such.
+# Each property in a pipeline configuration is prefixed by the name of the
+# pipeline configuration. In this sample, we're creating an `events` pipeline
+# configuration.
+
+# A comma separated list of <hostname>:<port> of zookeeper servers where the
+# Kafka brokers are registered. It's also possible to specify an optional root
+# path in ZooKeeper after the port. This is useful when you're using a shared
+# ZooKeeper quorum with other services.
+#
+# Ex.
+pipeline.events.kafka.zookeeper.quorum = {{ zookeeper_quorum }}
+###################################################################################################
+# Name: pipeline.<config name>.topic
+# Required: Yes
+#
+# The name of the Kafka topic from which to consume events.
+#
+# Ex.
+pipeline.events.topic = events
+###################################################################################################
+# Name: pipeline.<config name>.repo
+# Required: Yes
+#
+# This is a required field, but it is ignored for this consumer. The value can be left blank.
+#
+pipeline.events.repo =
+###################################################################################################
+# Name: pipeline.<config name>.dataset
+# Required: Yes
+#
+# This is a required field, but it is ignored for this consumer. The value can be left blank.
+#
+pipeline.events.dataset =
+###################################################################################################
+# Name: pipeline.<config name>.consumer.group.id
+# Required: Yes
+#
+# The group name of this consumer. When multiple consumers are part of the same
+# group, they split up the work of taking the data. This gives you greater
+# parallelism, but means there's no global ordering of events.
+#
+# Ex.
+pipeline.events.consumer.group.id = metadata-consumer
+###################################################################################################
+# Name: pipeline.<config name>.key.cache.size
+# Required: No
+#
+# The minimum number of Kafka message keys per topic-partition to cache. If a cached key is seen
+# again in the same partition the message is a duplicate, and it isn't processed. A value of 0
+# disables de-duplication and stores all messages, regardless of their key.
+#
+# Ex.
+# pipeline.events.key.cache.size = 8192
+##################################################################################################
+# Name: pipeline.<config name>.key.serializer.class
+# Name: pipeline.<config name>.serializer.class
+# Required: No
+#
+# Advanced. If the Rocana-Agent is configured to use the JSON encoding, then you need to configure
+# an additional json-events pipeline. This pipeline needs to include the following serializer parameters.
+#
+# Ex.
+# pipeline.json-events.key.serializer.class = kafka.serializer.DefaultDecoder
+# pipeline.json-events.serializer.class = com.rocana.kafka.JsonEventDecoder
+###################################################################################################
+# Name: pipeline.<config name>.threads
+# Required: Yes
+#
+# The number of pipelines created with this configuration. For each thread there
+# will be a separate Kafka stream. More threads means more work is
+# performed in parallel. For a dedicated machine, you probably want to configure between 1 and 4 threads.
+#
+# Ex.
+pipeline.events.threads = 1
+###################################################################################################
+# Name: pipeline.<config name>.dead-letter.mode
+# Required: Yes
+#
+# Dead letter mode determines what the system will do with improperly formatted events. The possible
+# values are "queue" or "drop". If "queue" is selected, then you must also specify the dead letter
+# topic, kafka brokers, and serializer class. Improperly formatted events will be placed on
+# the specified kafka topic.
+#
+# If "drop" is specified, the improperly formatted events will just be dropped.
+#
+# Ex.
+pipeline.events.dead-letter.mode = drop
+###################################################################################################
+# Name: pipeline.<config name>.dead-letter.topic
+# Required: Yes (if dead letter mode == queue)
+#
+# If dead letter mode has been set to "queue", then this will specify which kafka topic these
+# events should be placed on.
+#
+# Ex.
+# pipeline.events.dead-letter.topic = bad_events
+###################################################################################################
+# Name: pipeline.<config name>.dead-letter.producer.kafka.brokers
+# Required: Yes (if dead letter mode == queue)
+#
+# A comma separated list of <hostname>:<port> of kafka brokers to use.
+#
+# Ex.
+# pipeline.events.dead-letter.producer.kafka.brokers = kafka1.rocana.com:9092,kafka2.rocana.com:9092
+###################################################################################################
+# Name: pipeline.<config name>.dead-letter.producer.serializer.class
+# Required: Yes (if dead letter mode == queue)
+#
+# You must configure how the events are to be encoded.
+#
+# Ex.
+# pipeline.events.dead-letter.producer.serializer.class = kafka.serializer.DefaultEncoder
+###################################################################################################
+# Name: pipeline.<config name>.writer.drop-event-types
+# Required: No
+#
+# A comma seperated list of event type IDs that should be dropped by the writer.
+# Defaults to blank to capture all events (recommended). To keep all event types,
+# assign this to an empty value.
+#
+# Ex.
+# pipeline.events.writer.drop-event-types =
+###################################################################################################
+# Name: metrics.log-report-frequency
+# Required: Yes
+#
+# The frequency at which metrics are output to the consumer logs, in seconds. If this
+# value is 0, then there will not be any metrics output to the logs.
+#
+# Ex.
+metrics.log-report-frequency = {{ metrics_report_frequency }}
+###################################################################################################
+# Name: admin.server.bind-address
+# Required: No
+# Default: 0.0.0.0
+#
+# The IP or hostname to which the admin HTTP service should bind. If set to
+# 0.0.0.0 (wildcard), the server will bind to all available interfaces.
+#
+# Ex.
+# admin.server.bind-address = localhost
+#
+# Ex.
+# admin.server.bind-address = consumer1234.rocana.com
+###################################################################################################
+# Name: admin.server.port
+# Required: Yes
+# Default: 17318
+#
+# The port to which the admin HTTP service should bind.
+#
+# Ex.
+admin.server.port = 17318
+###################################################################################################
+#
+# Kafka Consumer tuning
+#
+pipeline.events.consumer.rebalance.max.retries = 24
+pipeline.events.consumer.rebalance.backoff.ms = 5000

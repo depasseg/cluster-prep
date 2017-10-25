@@ -1,0 +1,13 @@
+---
+
+- name: "** install JDK ** ensure jdk is installed on rocana hosts."
+  yum: name={{ jdk_package_name }} state=latest
+  tags: install-rocana
+
+# general packages for Rocana
+- name: "** rocana ** install rocana datatool and diagnostics bundle"
+  yum: name={{ item }} state=latest
+  with_items:
+    - rocana-diag-bundle
+    - rocana-tools
+  tags: install-rocana

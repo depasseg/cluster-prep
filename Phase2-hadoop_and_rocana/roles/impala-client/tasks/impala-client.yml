@@ -1,0 +1,17 @@
+---
+
+- name: "** impala client ** clean repo data prior to package installation"
+  command: yum clean all
+  
+- name: "** impala client ** install required packages"
+  yum: name={{ item }} state=latest
+  with_items:
+    - impala
+    - impala-shell
+    - bigtop-utils
+  tags: install-impala-master
+
+- name: "** impala client ** deploy impala config template"
+  template: src=etc-default.impala-client.j2 dest=/etc/default/impala owner=root group=root mode=0644
+  tags: install-impala-master
+

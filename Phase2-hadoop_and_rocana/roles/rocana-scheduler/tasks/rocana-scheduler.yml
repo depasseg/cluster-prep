@@ -1,0 +1,39 @@
+---
+
+#############################################################################################
+#                                   Rocana Scheduler                                        #
+#############################################################################################
+
+- name: "** rocana scheduler ** deploy scheduler commands.d file"
+  template: src=configs/{{ cluster_name }}//commands.d/rocana-scheduler.j2
+            dest=/etc/rocana-ops/commands.d/rocana-scheduler
+            owner=rocana
+            group=rocana
+            mode=0644
+  tags:
+    - configure-rocana
+    - rocana-scheduler
+
+- name: "** rocana scheduler ** deploy rocana scheduler configuration file"
+  template: src=configs/{{ cluster_name }}/rocana-scheduler/rocana-scheduler.properties.j2
+            dest=/etc/rocana-ops/rocana-scheduler/rocana-scheduler.properties
+            owner=rocana
+            group=rocana
+            mode=0644
+  tags:
+    - configure-rocana
+    - rocana-scheduler
+
+- name: "** rocana scheduler ** deploy spark jar to HDFS"
+  shell: su -l rocana -c 'hadoop fs -put /opt/rocana/rocana-{{ rocana_version }}/spark-lib/rocana-spark-assembly/rocana-spark-assembly-{{ spark_version }}-hadoop2.2.0-{{ rocana_version }}.jar /user/rocana/rocana-spark-assembly-{{spark_version}}-hadoop2.2.0-{{rocana_version}}.jar'
+  ignore_errors: yes
+  tags:
+    - configure-rocana
+    - rocana-scheduler
+
+- name: "** rocana scheduler ** start and chkconfig on rocana-scheduler"
+  service: name=rocana-scheduler state=restarted enabled=yes
+  tags:
+    - rocana-consumers
+    - rocana-scheduler
+

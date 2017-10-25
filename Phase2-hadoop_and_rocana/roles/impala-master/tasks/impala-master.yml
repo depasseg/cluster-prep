@@ -1,0 +1,38 @@
+---
+
+- name: "** impala master ** clean repo data prior to package installation"
+  command: yum clean all
+  
+- name: "** impala master ** install required packages"
+  yum: name={{ item }} state=latest
+  with_items:
+    - impala
+    - impala-state-store
+    - impala-catalog
+    - bigtop-utils
+  tags: install-impala-master
+  
+- name: "** impala master ** refresh namenode group mappings to pick up impala groups"
+  shell: su -l hdfs -c 'hdfs dfsadmin -refreshUserToGroupsMappings'
+  tags:
+    - install-impala-master
+    - refresh-user-mapping-impala
+
+- name: "** impala master ** refresh resource manager group mappings to pick up impala groups"
+  shell: su -l yarn -c 'yarn rmadmin -refreshUserToGroupsMappings'
+  tags:
+    - install-impala-master
+    - refresh-user-mapping-impala
+
+- name: "** impala master ** deploy impala config template"
+  template: src=etc-default.impala-master.j2 dest=/etc/default/impala owner=root group=root mode=0644
+  tags: install-impala-master
+
+- name: "** impala master ** (re)start impala catalog and state store daemons"
+  service: name={{ item }} state=restarted
+  with_items: 
+    - impala-catalog
+    - impala-state-store
+  tags: install-impala-master
+
+

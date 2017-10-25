@@ -1,0 +1,17 @@
+---
+
+- name: "** ambari ** copy ambari.repo template to /etc/yum.repos.d/"
+  template: src=ambari.repo.j2 dest=/etc/yum.repos.d/ambari.repo owner=root group=root mode=0644
+  tags: deploy-ambari-repo
+
+- name: "** ambari ** copy rocana.repo template to /etc/yum.repos.d/"
+  template: src=rocana.repo.j2 dest=/etc/yum.repos.d/rocana.repo owner=root group=root mode=0644
+  tags: deploy-rocana-repo
+
+- name: "** HDP ** deploy HDP repos to all hosts"
+  template: src=HDP.repo.j2 dest=/etc/yum.repos.d/HDP.repo owner=root group=root mode=0644
+  tags: deploy-hdp-repo
+
+- name: "** HDP ** deploy HDP-UTILS repos to all hosts"
+  template: src=HDP-UTILS.repo.j2 dest=/etc/yum.repos.d/HDP-UTILS.repo owner=root group=root mode=0644
+  tags: deploy-hdp-repo

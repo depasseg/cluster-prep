@@ -1,0 +1,112 @@
+###### Rocana Section ########
+
+[rocana-all:children]
+rocana-agents
+rocana-consumers
+rocana-webapp
+
+[rocana-agents]
+r1.cm.cluster
+r2.cm.cluster
+r3.cm.cluster
+r4.cm.cluster
+r5.cm.cluster
+r6.cm.cluster
+r7.cm.cluster
+
+[rocana-consumers:children]
+rocana-analytics
+rocana-dlms
+rocana-echoes
+rocana-hdfs-consumers
+rocana-metadata-consumers
+rocana-metrics-consumers
+
+[rocana-analytics]
+r7.cm.cluster
+
+[rocana-dlms]
+r7.cm.cluster
+
+[rocana-echoes]
+r7.cm.cluster
+
+[rocana-hdfs-consumers]
+r7.cm.cluster
+
+[rocana-metadata-consumers]
+r7.cm.cluster
+
+[rocana-metrics-consumers]
+r7.cm.cluster
+
+[rocana-webapp]
+r7.cm.cluster
+
+######## Postgres Section ########
+[postgres-server]
+r1.cm.cluster
+
+######## Hadoop Node Section ########
+[hadoop:children]
+hadoop-hn
+hadoop-dn
+
+[hadoop-hn:children]
+namenode
+secondary-namenode
+resource-manager
+kafka-brokers
+hive-metastore
+zk-jn
+rocana-webapp
+rocana-consumers
+
+[namenode]
+r1.cm.cluster
+
+[secondary-namenode]
+r2.cm.cluster
+
+[resource-manager]
+r3.cm.cluster
+
+[hive-metastore]
+r3.cm.cluster
+
+######## Impala StateStore/Catalog Server ########
+[impala-master]
+r3.cm.cluster
+
+# for simplicity, zookeepers and
+# journalnodes will be collocated.
+# you can change this in group_vars/all.yml
+# if you don't want it set up that way.
+[zk-jn]
+r2.cm.cluster
+r3.cm.cluster
+r4.cm.cluster
+
+[kafka-brokers]
+r2.cm.cluster
+r3.cm.cluster
+r4.cm.cluster
+
+[hadoop-dn]
+r4.cm.cluster
+r5.cm.cluster
+r6.cm.cluster
+
+###### CM/Ambari Section ########
+#cluster-management-server is the ambari or cloudera manager host
+[cluster-management-all:children]
+cluster-management-agents
+cluster-management-server
+
+[cluster-management-agents:children]
+hadoop
+rocana-webapp
+rocana-consumers
+
+[cluster-management-server]
+r1.cm.cluster

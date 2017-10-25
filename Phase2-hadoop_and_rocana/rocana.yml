@@ -1,0 +1,85 @@
+---
+# install impala on HDP.  Skipped if CDH
+- hosts: hadoop-hn
+  gather_facts: yes
+  roles:
+    - { role: impala-client, when: hadoop_distribution|upper == 'HDP' }
+    
+- hosts: impala-master
+  gather_facts: yes
+  roles:
+    - { role: impala-master, when: hadoop_distribution|upper == 'HDP' }
+
+- hosts: hadoop-dn
+  gather_facts: yes
+  roles:
+    - { role: impala-worker, when: hadoop_distribution|upper == 'HDP' }
+
+- hosts: rocana-all
+  gather_facts: yes
+  roles:
+    - { role: impala-client, when: hadoop_distribution|upper == 'HDP' }
+
+# install rocana
+- hosts: rocana-all
+  gather_facts: yes
+  roles: 
+    - rocana-common
+    
+- hosts: rocana-webapp
+  gather_facts: yes
+  roles: 
+    - rocana-webapp
+    - rocana-scheduler
+
+- hosts: rocana-analytics
+  gather_facts: yes
+  roles:
+    - rocana-analytics
+
+- hosts: rocana-dlms
+  gather_facts: yes
+  roles:
+    - rocana-dlm
+
+- hosts: rocana-echoes
+  gather_facts: yes
+  roles:
+    - rocana-echoes
+
+- hosts: rocana-metadata-consumers
+  gather_facts: yes
+  roles:
+    - rocana-metadata-consumers
+
+- hosts: rocana-hdfs-consumers
+  gather_facts: yes
+  roles:
+    - rocana-hdfs-consumers
+
+- hosts: rocana-metrics-consumers
+  gather_facts: yes
+  roles:
+    - rocana-metrics-consumers
+
+- hosts: hadoop-dn
+  gather_facts: yes
+  roles:
+    - rocana-search
+
+- hosts: rocana-webapp
+  gather_facts: yes
+  tasks:
+    - name: "** rocana-supervisor-prep ** register rocana_rsa.pub key from webapp host"
+      shell: "cat /opt/rocana/rocana-{{ rocana_version }}/state/rocana-webapp/keys/rocana_rsa.pub | awk {'print $1,$2'}"
+      register: pubkey
+
+    - name: "** rocana-supervisor-prep ** create supervisor.conf and stage for rocana-agent deployment"
+      local_action: template src=configs/{{ cluster_name }}/rocana-supervisor/supervisor.conf.j2 dest=configs/{{ cluster_name }}/rocana-agent/supervisor.conf
+
+# install rocana agents.  This should be done after the web application is online so that
+# agents can be given proper supervisor configs.
+- hosts: rocana-agents
+  gather_facts: yes
+  roles:
+    - rocana-agent

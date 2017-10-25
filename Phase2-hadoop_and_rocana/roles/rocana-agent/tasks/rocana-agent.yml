@@ -1,0 +1,32 @@
+---
+
+#
+# Rocana agent and supervisor bits
+#
+- name: "** rocana ** install rocana supervisor, agent, and diagnostics bundle"
+  yum: name={{ item }} state=latest
+  with_items:
+    - rocana-supervisor
+    - rocana-agent
+    - rocana-diag-bundle
+  tags:
+    - install-rocana
+    - install-rocana-agent
+
+- name: "** rocana supervisor ** copy supervisor configuration file to supervisor config directory"
+  copy: src=configs/{{ cluster_name }}/rocana-agent/supervisor.conf dest=/etc/rocana-ops/rocana-supervisor/supervisor.conf owner=rocana group=rocana mode=0644
+  tags:
+    - install-rocana
+    - install-rocana-agent
+
+- name: "** rocana supervisor and agent ** copy supervisor and agent sysconfig to set run as user"
+  copy: src=configs/{{ cluster_name }}/rocana-agent/supervisor.conf dest=/etc/rocana-ops/rocana-supervisor/supervisor.conf owner=rocana group=rocana mode=0644
+  tags:
+    - install-rocana
+    - install-rocana-agent
+
+- name: "** rocana supervisor ** start and chkconfig supervisor process to be on"
+  service: name=rocana-supervisor state=restarted enabled=yes
+  tags:
+    - install-rocana
+    - install-rocana-agent

@@ -1,0 +1,36 @@
+---
+
+#
+# Grab all ext4 volumes from fstab, exclude swap, commented and boot volumes
+#
+- name: "** hadoop ** mod mount permissions for ext4" 
+  shell: "grep ext4 /etc/fstab | grep -v \# | grep -v swap | grep -v boot | awk {'print $2,$1,$3,$6'}"
+  register: fstab_ext4_mounts
+  tags: fix-ext4-mount-options
+
+#
+#  Modify the mount opts for those ext4 mount points. 
+#
+- name: "** hadoop fix ext4 mount options"
+  mount: name={{ item.split()[0] }} src={{ item.split()[1] }} fstype={{ item.split()[2] }} opts=defaults,noatime,nodiratime passno={{ item.split()[3] }} state=mounted
+  with_items: fstab_ext4_mounts.stdout_lines
+  when: "'ext4' in item"
+  tags: fix-ext4-mount-options
+
+#
+# Grab all xfs volumes from fstab, exclude swap, commented and boot volumes
+#
+- name: "** hadoop ** mod mount permissions for xfs" 
+  shell: grep xfs /etc/fstab | grep -v \# | grep -v swap | grep -v boot | awk {'print $2,$1,$3,$6'}
+  register: fstab_xfs_mounts
+  tags: fix-xfs-mount-options
+
+#
+#  Modify the mount opts for those xfs mount points. 
+#
+- name: "** hadoop fix xfs mount options"
+  mount: name={{ item.split()[0] }} src={{ item.split()[1] }} fstype={{ item.split()[2] }} opts=defaults,noatime,nodiratime passno={{ item.split()[3] }} state=mounted
+  with_items: fstab_xfs_mounts.stdout_lines
+  when: "'xfs' in item" and len
+  tags: fix-xfs-mount-options
+

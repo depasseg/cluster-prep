@@ -1,0 +1,19 @@
+#!/bin/sh
+
+#setting java home
+export JAVA_HOME="{{ java_jdk_home }}"
+
+command_type="java"
+command_java_opts="-Djava.net.preferIPv4Stack=true"
+command_java_opts="${command_java_opts} -Djava.util.logging.config.file=$ROCANA_CONF_DIR/parquet-logging.properties"
+
+# Uncomment the following line if you are using Kerberos
+#command_java_opts="${command_java_opts} -Djava.security.auth.login.config=$ROCANA_CONF_DIR/jaas-client.conf"
+
+# Uncomment the following line and change to your HDP version if you're running on an HDP cluster
+#command_java_opts="${command_java_opts} -Dhdp.version=2.3.4.7-4
+
+# Uncomment the following line if this server is managed by Cloudera Manager and is assigned as a Hive gateway
+CLASSPATH=${CLASSPATH}:/etc/hive/conf:/etc/hadoop/conf
+
+command_java_main="com.rocana.dlm.DlmApp"

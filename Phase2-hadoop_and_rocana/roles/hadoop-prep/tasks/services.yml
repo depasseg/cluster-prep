@@ -1,0 +1,31 @@
+---
+
+#
+# Disable IP Tables
+#
+- name: "** hadoop ** disable and chkconfig off iptables"
+  service: name={{ item }} state=stopped enabled=no
+  with_items:
+    - iptables
+    - ip6tables
+  ignore_errors: yes
+  tags: disable-firewall
+
+#
+# Disable firewalld on cent/rhel 7 boxes
+#
+- name: "** hadoop ** disable firewall.d on RHEL/CentOS 7+ machines"
+  service: name=firewalld state=stopped enabled=no
+  when: ansible_os_family == "RedHat" and ansible_distribution_major_version|int == 7
+  ignore_errors: yes
+  tags: disable-firewall
+
+- name: "** hadoop ** enable ntpd and chkconfig service on"
+  service: name=ntpd state=restarted enabled=yes
+  tags: enable-ntp
+
+# Start the machine check exception logger.  will write to /var/log/messages by default.
+- name: "** hadoop ** start mcelog and chkconfig service on"
+  service: name=mcelog state=started enabled=yes
+  ignore_errors: yes
+  tags: enable-mcelog

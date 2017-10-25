@@ -1,0 +1,11 @@
+---
+
+- name: "** install JDK ** ensure jdk is installed on ambari server hosts."
+  yum: name={{ jdk_package_name }} state=latest
+  tags: install-ambari-server
+
+- name: "** ambari-server ** install required packages"
+  yum: name={{ item }} state=latest
+  with_items:
+    - ambari-server
+  tags: install-ambari-server

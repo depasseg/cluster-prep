@@ -1,0 +1,16 @@
+---
+
+- name: "** rocana ** clean repo data prior to package installation"
+  command: yum clean all
+
+- name: "** rocana ** install kafka binaries on rocana consumer server for HDP 2.3"
+  shell: yum install kafka_2_3* -y
+  when: hadoop_distribution|upper == 'HDP'
+  tags: install-rocana
+
+# Rocana webapp package
+- name: "** rocana ** install rocana webapp"
+  yum: name={{ item }} state=latest
+  with_items:
+    - rocana-webapp
+  tags: install-rocana

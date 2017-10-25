@@ -1,0 +1,81 @@
+#
+# Copyright (c) 2016 Rocana. All rights reserved.
+#
+# This is a sample Rocana Scheduler configuration file. For the full documentation,
+# see the Rocana Reference Guide.
+#
+###################################################################################################
+# Name: jdbc.url
+# Required: Yes
+#
+# The Rocana Scheduler requires access to the same PostgreSQL 8+ database as the webapp. The jdbc.url specifies
+# which database to connect to. This database must be setup prior to starting the Rocana Scheduler by
+# starting the webapp.
+#
+# Ex.
+jdbc.url = jdbc:postgresql://{{ postgres_server }}:5432/rocana
+###################################################################################################
+# Name: jdbc.user
+# Required: Yes
+#
+# The user name to connect to the database with.
+#
+# Ex.
+jdbc.user = rocana
+###################################################################################################
+# Name: jdbc.password
+# Required: Yes
+#
+# The password to connect to the database with.
+#
+# Ex.
+jdbc.password = {{ rocana_password }}
+###################################################################################################
+# Name: server.ssl.key-store
+# Required: No
+#
+# The path to a Java key store to use for keys for ssl encryption.
+#
+# Ex.
+# server.ssl.key-store = conf/rocana-scheduler/keystore
+###################################################################################################
+# Name: server.ssl.key-store-password
+# Required: No
+#
+# The password to open the specified key store.
+#
+# Ex.
+# server.ssl.key-store-password = rocana
+###################################################################################################
+# Name: server.ssl.key-password
+# Required: No
+#
+# The password to open the specified key in the key store (if different from the key store password)
+#
+# Ex.
+# server.ssl.key-password = rocana
+###################################################################################################
+# Name: server.ssl.key-alias
+# Required: No
+#
+# Alias that identifies the key in the key store
+#
+# Ex.
+# server.ssl.key-alias = scheduler
+###################################################################################################
+# Name: server.ssl.key-store-type
+# Required: No
+#
+# Key store type
+#
+# Ex.
+# server.ssl.key-store-type = JCEKS
+###################################################################################################
+# For running rocana-scheduler instances as a cluster, customize settings to pass
+# on to Quartz Secheduler.
+# For descriptions and more options, see http://www.quartz-scheduler.org/documentation/quartz-2.x/configuration/ConfigJDBCJobStoreClustering.html
+#
+# org.quartz.jobStore.isClustered = true
+# org.quartz.scheduler.instanceName = JobSchedulerCluster
+# org.quartz.scheduler.instanceId = AUTO
+###################################################################################################

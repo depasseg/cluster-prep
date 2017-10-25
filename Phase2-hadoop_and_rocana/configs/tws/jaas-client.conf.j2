@@ -1,0 +1,35 @@
+Client {
+  com.sun.security.auth.module.Krb5LoginModule required
+  useKeyTab=true
+  keyTab="{{ rocana_keytab }}"
+  storeKey=true
+  useTicketCache=false
+  doNotPrompt=true
+  renewTGT=false
+  principal="{{ rocana_kerberos_principal }}";
+};
+
+/* This entry is needed for Rocana Search in order to do authenticated RPC (using SASL/Kerberos).
+   Ideally, the entries here should be the same as in the Client module.
+   We recommended a different principal per host by using hostname in the principal name. */
+com.sun.security.jgss.accept {
+  com.sun.security.auth.module.Krb5LoginModule required
+  useKeyTab=true
+  keyTab="{{ rocana_keytab }}"
+  storeKey=true
+  useTicketCache=false
+  doNotPrompt=true
+  renewTGT=false
+  principal="{{ rocana_kerberos_principal }}";
+};
+
+UI {
+  com.sun.security.auth.module.Krb5LoginModule required
+  useKeyTab=true
+  keyTab="/opt/rocana/ui.keytab"
+  storeKey=true
+  useTicketCache=false
+  doNotPrompt=true
+  renewTGT=false
+  principal="{{ rocana_kerberos_principal }}";
+};

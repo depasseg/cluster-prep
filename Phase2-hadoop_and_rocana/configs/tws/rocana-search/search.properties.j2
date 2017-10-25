@@ -1,0 +1,595 @@
+#
+# Copyright (c) 2016 Rocana. All rights reserved.
+#
+# This is a sample Rocana Search configuration file. For the full documentation,
+# see the Rocana Reference Guide.
+#
+###################################################################################################
+# Name: kerberos.principal
+# Required: Yes (in a Kerberos environment)
+#
+# When the consumer is run in a kerberos secured environment, you must specify a rocana-search
+# principal and keytab that can be used to authenticate with Hadoop Kerberos services.
+#
+# We recommend that you specify the principal as user/hostname@REALM, rather than just
+# user@REALM.
+#
+# Ex.
+# kerberos.principal = {{ rocana_kerberos_principal }}
+# ##################################################################################################
+# Name: kerberos.principal.keytab
+# Required: Yes (in a Kerberos environment)
+#
+# If running in a Kerberos secured environment you need to specify the location of the keytab for the
+# rocana-search principal (e.g. rocana/<hostname>) to authenticate with.
+#
+# Ex.
+# kerberos.principal.keytab = {{ rocana_keytab }}
+# ##################################################################################################
+# Name: rpc.sasl.enabled
+# Required: No
+# Default: false
+#
+# Specifies whether you also want the RPC traffic to Rocana Search (e.g., from the web UI)
+# to use SASL/Kerberos for authentication and possibly additional protection, such as integrity
+# checks or on-the-wire encryption (see the rpc.sasl.qop section for that).
+# If you set kerberos.principal and rpc.sasl.enabled=false, then HDFS access will
+# use Kerberos authentication, but the RPC queries to Rocana Search will not.
+#
+# Ex.
+# rpc.sasl.enabled = true
+# ##################################################################################################
+# Name: rpc.sasl.authorized-users
+# Required: No
+# Default: rocana
+#
+# If running in a Kerberos secured environment and rpc.sasl.enabled=true,
+# optionally specify which system-users are authorized to make RPC queries
+# to Rocana Search. Separate usernames with commas.
+#
+# Ex.
+# rpc.sasl.authorized-users = rocana,system2
+# ##################################################################################################
+# Name: rpc.sasl.qop
+# Required: Yes (if rpc.sasl.enabled=true)
+#
+# RPC SASL Quality-of-Protection (QOP). This setting must be set when rpc.sasl.enabled=true.
+# Valid settings are:
+#   "auth"     : authentication only - RPC users will be authenticated using Kerberos credentials
+#   "auth-int" : authentication and message integrity checks, but no wire encryption
+#   "auth-conf": authentication, message integrity checks, and wire encryption
+#
+# The QOP level chosen here must also match the setting on the in Rocana webapp properties
+# files, otherwise the SASL authentication negotiation will fail and queries will not work.
+#
+# Ex.
+# rpc.sasl.qop = auth-conf
+# ##################################################################################################
+# Name: hdfs.replication
+# Required: No
+# Default: 3
+#
+# HDFS replication used for Lucene indexes.
+#
+# Ex.
+# hdfs.replication = 3
+###################################################################################################
+# Name: hdfs.root
+# Required: Yes
+#
+# The absolute path of the root directory (with schema, hostname and port) where Rocana Search
+# data should be stored. Collections will be placed in nested directories under this point.
+#
+# Ex.
+# hdfs.root = hdfs://cdh:8020/datasets/rocana/search
+hdfs.root = {{ search_root[hdfs_ha] }}
+###################################################################################################
+# Name: query.blockcache.off-heap-mb
+# Required: No
+# Default: 4096
+#
+# The total amount of off-heap memory to use as a query block cache, in
+# megabytes. This is memory above and beyond Java's Xmx value. With this
+# enabled, the system caches Lucene indexes in off-heap memory, which is not
+# subject to garbage collection. This cache provides a significant boost to query
+# performance, primarily for subsequent queries against the same data, where
+# query performance can improve by an order of magnitude.
+#
+# This value should be a multiple of 128. If not, the system rounds down to the nearest
+# number divisible by 128. If less than 128 but greater than 0, an exception will be
+# thrown at startup.
+#
+# To disable off-heap cache entirely (not recommended), set this value to 0.
+#
+# Recommended to be several gigabytes large, depending on your Lucene index sizes.
+# That might mean 4096 (4 gb), 8192 (8 gb), or even 32768 (32 gb).
+#
+# Java's -XX:MaxDirectMemorySize property must be at least this amount. Example:
+#   -XX:MaxDirectMemorySize=8192m
+# Set -XX:MaxDirectMemorySize in /etc/rocana-ops/commands.d/rocana-search
+#
+# Ex.
+query.blockcache.off-heap-mb = 4096
+###################################################################################################
+# Name: zookeeper.quorum
+# Required: Yes
+#
+# A comma separated list of <hostname>:<port> of zookeeper servers where the
+# Rocana Search will store its metadata, and where it can find the Kafka Broker
+# information. Rocana Search metadata will be stored in under a znode specified by
+# the zookeeper.metadata.root option below.
+#
+# Ex.
+# zookeeper.quorum = cdh:2181,cdh-2:2181
+zookeeper.quorum = {{ zookeeper_quorum }}
+###################################################################################################
+# Name: zookeeper.metadata.root
+# Required: No
+# Default: /rocana-search
+#
+# Name of the znode (directory) in zookeeper where Rocana Search metadata will be stored.
+#
+# Ex.
+# zookeeper.metadata.root = /rocana-search
+###################################################################################################
+# Name: kafka.brokers
+# Required: Yes
+#
+# A comma separated list of <hostname>:<port> of kafka brokers, used for Rocana Search
+# metadata messages.
+#
+# Ex.
+# kafka.brokers = kafka:9092,kafka-2:9092
+kafka.brokers = {{ kafka_brokers }}
+###################################################################################################
+# Name: kafka.metadata.topic
+# Required: No
+# Default: rocana-search-metadata
+#
+# The name of the Rocana Search metadata topic, defaults to rocana-search-metadata.
+#
+# Ex.
+# kafka.metadata.topic = rocana-search-metadata
+###################################################################################################
+# Name: query.server.bind-address
+# Required: No
+# Default: 0.0.0.0
+#
+# The IP address the Rocana Search query services (Query Coordinator and Query Executor) should
+# bind to.
+#
+# Ex.
+# query.server.bind-address = 10.10.1.106
+###################################################################################################
+# Name: query.coordinator.request.timeout-ms
+# Required: No
+# Default: 180000 (3 minutes)
+#
+# Query coordinator request timeout, in milliseconds. If the query does not finish within the
+# specified time frame, the coordinator will report an error to the client (such as the webapp)
+# that the query could not be completed and will return no data. On systems with large Lucene
+# indexes (high data volumes per day) or where queries will tend to span many days, increasing
+# this value to 5 minutes (or even higher) is recommended.
+#
+# Ex.
+# query.coordinator.request.timeout-ms = 300000
+###################################################################################################
+# Name: query.coordinator.requests.fragments.num-concurrent
+# Required: No
+# Default: 20
+#
+# Number of concurrent query coordinator request fragments allowed.
+# This value should usually match the number of Kafka partitions (or higher).
+# Setting this value too low will cause all the fragments for a single user query
+# to be done in "waves" and thus be slower than if all the fragments were sent out at once.
+#
+# Ex.
+# query.coordinator.requests.fragments.num-concurrent = 100
+###################################################################################################
+# Name: query.coordinator.port
+# Required: Yes
+#
+# The port the Rocana Search coordinator should listen on.
+#
+# Ex.
+query.coordinator.port = 17340
+###################################################################################################
+# Name: executor.port
+# Required: Yes
+#
+# The port the Rocana Search query executor should listen on.
+#
+# Ex.
+query.executor.port = 17341
+###################################################################################################
+# Name: writers.expire-after-ms
+# Required: No
+# Default: 60000
+#
+# How long to wait after receiving the last event for a partition before the writer
+# for that partition is closed. This is used to reduce resource usage as partitions
+# become "old" and are no longer written to.
+#
+# Ex.
+# writers.expire-after-ms = 60000
+###################################################################################################
+# Name: writers.ram-buffer-size-mb
+# Required: No
+# Default: 256
+#
+# Amount of memory to allow each writer to use before it flushes documents out to HDFS.
+#
+# Ex.
+# writers.ram-buffer-size-mb = 256
+###################################################################################################
+# Name: searchers.refresh-after-ms
+# Required: No
+# Default: 15000
+#
+# How often Lucene searchers are refreshed. New documents are only visible after a search refresh,
+# but refreshing searchers also uses CPU and disk I/O.
+#
+# Ex.
+# searchers.refresh-after-ms = 20000
+###################################################################################################
+# Name: searchers.max-allowed
+# Required: No
+# Default: 20
+#
+# The maximum number of searchers kept in the searcher cache at once. Re-use of searchers makes
+# followup searches faster, but open searchers use up memory. A separate searcher is required
+# for each slice of a partition.
+#
+# Ex.
+# searchers.max-allowed = 25
+###################################################################################################
+# Name: merge-scheduler.max-threads
+# Required: No
+# Default: 1
+#
+# The maximum number of threads to use for Lucene merges.
+# In the background, Lucene periodically merges index segments into larger segments to
+# reduce the number of files in a Lucene index. 
+# Setting this value higher will result in more aggressive merging, using more CPU
+# and resulting in fewer overall files.
+#
+# Ex.
+# merge-scheduler.max-threads = 2
+###################################################################################################
+# Name: merge-scheduler.max-merge-count
+# Required: No
+# Default: 2147483647 (Integer.MAX_VALUE)
+#
+# This is a threshold value for the maximum number of Lucene merges that can be
+# pending or in-process before Lucene will stall writing new data to indexes.
+# In general, stalling IndexWriters is something to be avoided in Rocana Search
+# so we recommend setting this value very high. (The Lucene default is 6.)
+#
+# Ex.
+# merge-scheduler.max-merge-count = 2147483647
+###################################################################################################
+# Name: pipeline
+# Required: Yes
+#
+# A comma separated list of pipeline configuration names. Each pipeline
+# configuration creates one or more pipelines in the consumer. Each pipeline
+# is fully independent, with its own stream from Kafka, transformation engine,
+# and underlying Lucene index writers.
+#
+# This property only declares the pipeline configuration name. Once declared,
+# the pipeline configuration properties must be specified. See later in this
+# file for an example.
+#
+# Ex. A single pipeline called 'events'.
+pipeline = events
+#
+# Ex. Two pipelines called 'events-a' and 'events-b'
+# pipeline = events-a,events-b
+###################################################################################################
+# Name: pipeline.<pipeline>.kafka.zookeeper.quorum
+# Required: Yes
+#
+# For each pipeline configuration named in the `pipeline` property, a set of properties
+# using that pipeline name should be specified. Required properties are indicated as such.
+# Each property in a pipeline configuration is prefixed by the name of the
+# pipeline configuration. In this sample, we're creating an `events` pipeline
+# configuration.
+#
+# A comma separated list of <hostname>:<port> of zookeeper servers where the
+# Kafka brokers are registered. It's also possible to specify an optional root
+# path in ZooKeeper after the port. This is useful when you're using a shared
+# ZooKeeper quorum with other services.
+#
+# Ex.
+# pipeline.events.kafka.zookeeper.quorum = zk1.rocana.com:2181,zk2.rocana.com:2181,zk3.rocana.com:2181
+pipeline.events.kafka.zookeeper.quorum = {{ zookeeper_quorum }}
+###################################################################################################
+# Name: pipeline.<pipeline>.topic
+# Required: Yes
+#
+# The name of the Kafka topic from which to consume events.
+#
+# Ex.
+pipeline.events.topic = events
+###################################################################################################
+# Name: pipeline.<pipeline>.dataset
+# Required: Yes
+#
+# The name of the dataset to which events in this pipeline should be written.
+#
+# Ex.
+pipeline.events.dataset = events
+###################################################################################################
+# Name: pipeline.<pipeline>.partition-strategy-file
+# Required: Yes
+#
+# Name of the search partition strategy file. This file should be in JSON format, the available
+# partitioning types are "hash", "year-month-day", and "year-month-day-hour".
+# The file must be placed in $ROCANA_CONF_DIR/rocana-search.
+#
+# All partitioners require a "source", which names the field (in the event schema) that
+# is partitioned on.
+#
+# The "hash" partitioner also requires a "buckets" field, which is a positive integer
+# identifying how many buckets to hash the "source" field into.
+#
+# An example partition strategy file:
+# [
+#   {"type": "year-month-day", "source": "ts"                    },
+#   {"type": "hash",           "source": "location", "buckets": 4}
+# ]
+#
+# If more than one partitioner is used (as in the above example), they will be applied
+# in the order specified.  So the above partition strategy will result in directory
+# paths like ${hdfs.root}/year=2015/month=12/day=05/location=2.
+# See the Rocana Ops Reference Guide for more information about rocana-search partition strategies.
+#
+# Ex.
+# pipeline.events.partition-strategy-file = partition-strategy.json
+pipeline.events.partition-strategy-file = /etc/rocana-ops/rocana-search/partition-strategy.json
+###################################################################################################
+# Name: pipeline.<pipeline>.consumer.group.id
+# Required: Yes
+#
+# The group name of this consumer. When multiple consumers are part of the same
+# group, they split up the work of taking the data. This gives you greater
+# parallelism, but means there's no global ordering of events.
+#
+# Ex.
+pipeline.events.consumer.group.id = search-consumer
+###################################################################################################
+# Name: pipeline.<pipeline>.key.cache.size
+# Required: No
+# Default: 8192
+#
+# The minimum number of Kafka message keys per topic-partition to cache. If a cached key is seen
+# again in the same partition the message is a duplicate, and it isn't processed. A value of 0
+# disables de-duplication and stores all messages, regardless of their key.
+#
+# Ex.
+# pipeline.events.key.cache.size = 4096
+###################################################################################################
+# Name: pipeline.<pipeline>.sub-batch.num-writers
+# Required: No
+# Default: 16
+#
+# Specifies the number of threads for Lucene indexing. 16 is the recommended
+# maximum setting, even for systems with much larger CPU core counts.
+# Reduce this setting if the CPU core count of the Rocana Search host is less than 16.
+# In some cases reducing this setting can help reduce GC pressure, so consider changing
+# to 4 or 8 in cases where GC pressure is causing issues in Rocana Search.
+#
+# Ex.
+# pipeline.events.sub-batch.num-writers = 16
+###################################################################################################
+# Name: pipeline.<pipeline>.writer.batch-time-ms
+# Required: No
+# Default: 10000
+#
+# The maximum frequency with which received events are written to indexes, in milliseconds.
+# (Batches may be processed more frequently than this if the pipeline.<pipeline>.writer.batch-size
+# threshold is met before this timer goes off.) The recommended lower bound is 1 second (1000).
+# However, higher numbers will result in better indexing throughput. Note that Lucene commits
+# are based on commit time (below), not batches.
+#
+# Ex.
+# pipeline.events.writer.batch-time-ms = 10000
+###################################################################################################
+# Name: pipeline.<pipeline>.writer.batch-size
+# Required: No
+# Default: 100000
+#
+# The maximum number of events the consumer will consume before writing the batch
+# of events to an index. If the pipeline.<pipeline>.writer.batch-time-ms timer
+# goes off before this threshold is met then the batch will be processed with
+# however many events are in the batch. The recommended lower bound is 10000.
+# However, higher numbers will result in better indexing throughput. Note that
+# Lucene commits are based on commit time (below), not batches.
+#
+# Ex.
+# pipeline.events.writer.batch-size = 100000
+###################################################################################################
+# Name: pipeline.<pipeline>.writer.commit-time-ms
+# Required: No
+# Default: 600000 (10 min)
+#
+# The frequency with which the Lucene indexes are hard committed, in milliseconds.
+#
+# Ex.
+# pipeline.events.writer.commit-time-ms = 300000
+###################################################################################################
+# Name: pipeline.<pipeline>.writer.drop-event-types
+# Required: No
+#
+# A comma seperated list of event type IDs that should be dropped by the writer.
+# To keep all event types, assign this to an empty value.
+# Defaults to "107,110,111,112,113,116":
+#  107: host metrics
+#  110: predicted anomaly gauges
+#  111: predicted anomaly counts
+#  112: Agent heartbeats
+#  113: supervisor heartbeats
+#  116: NetFlow heartbeats
+#
+# Ex.
+# pipeline.events.writer.drop-event-types = 107, 110, 111, 1003
+###################################################################################################
+# Name: pipeline.<pipeline>.dead-letter.mode
+# Required: Yes
+#
+# Dead letter mode determines what the system will do with improperly formatted events. The possible
+# values are "queue" or "drop". If "queue" is selected, then you must also specify the dead letter
+# topic, kafka brokers, and serializer class. Improperly formatted events will be placed on
+# the specified kafka topic.
+#
+# If "drop" is specified, the improperly formatted events will just be dropped.
+#
+# Ex.
+pipeline.events.dead-letter.mode = drop
+###################################################################################################
+# Name: pipeline.<pipeline>.dead-letter.topic
+# Required: Yes (if dead letter mode == queue)
+#
+# If dead letter mode has been set to "queue", then this will specify which kafka topic these
+# events should be placed on.
+#
+# Ex.
+# pipeline.events.dead-letter.topic = bad_events
+###################################################################################################
+# Name: pipeline.<pipeline>.dead-letter.producer.kafka.brokers
+# Required: Yes (if dead letter mode == queue)
+#
+# A comma separated list of <hostname>:<port> of kafka brokers to use.
+#
+# Ex.
+# pipeline.events.dead-letter.producer.kafka.brokers = {{ kafka_brokers }}
+###################################################################################################
+# Name: pipeline.<pipeline>.dead-letter.producer.serializer.class
+# Required: Yes (if dead letter mode == queue)
+#
+# You must configure how the events are to be encoded.
+#
+# Ex.
+# pipeline.events.dead-letter.producer.serializer.class = kafka.serializer.DefaultEncoder
+###################################################################################################
+# Name: producer.<producer-name>.topic
+# Required: Yes (if metrics.kafka-report-enabled is true)
+#
+# Specifies which Kafka topic events should be placed on for each named producer.
+#
+# Ex.
+# producer.metrics.topic = events
+###################################################################################################
+# Name: producer.<producer-name>.kafka.brokers
+# Required: Yes (if metrics.kafka-report-enabled is true)
+#
+# A comma separated list of <hostname>:<port> of Kafka brokers for a specific named producer
+#
+# Ex.
+# producer.metrics.kafka.brokers = {{ kafka_brokers }}
+###################################################################################################
+# Name: producer.<producer-name>.serializer.class
+# Required: No
+# Default: com.rocana.kafka.EventEncoder
+#
+# Specifies an encoder to use for Kafka.
+#
+# Ex.
+# producer.metrics.serializer.class = com.rocana.kafka.EventEncoder
+###################################################################################################
+# Name: producer.<producer-name>.key.serializer.class
+# Required: No
+# Default: kafka.serializer.DefaultEncoder
+#
+# Specifies an encoder to use for Kafka keys.
+#
+# Ex.
+# producer.metrics.key.serializer.class = kafka.serializer.DefaultEncoder
+###################################################################################################
+# Name: metrics.kafka-report-enabled
+# Required: No
+# Default: false
+#
+# Set this to true to enabled forwarding of internal metrics to Kafka as metrics events.
+#
+# Ex.
+# metrics.kafka-report-enabled = true
+###################################################################################################
+# Name: metrics.producer
+# Required: Yes (if metrics.kafka-report-enabled is true)
+#
+# Set this to configure internal metrics to be forwarded to Kafka as metrics events.
+# The value must be a valid name of a producer (see producer properties above).
+#
+# Ex.
+# metrics.producer = metrics
+###################################################################################################
+# Name: metrics.host
+# Required: No
+# Default: hostname from the OS
+#
+# The name of the host producing metrics Events.
+#
+# Ex.
+# metrics.host = host02.mydomain.com
+###################################################################################################
+# Name: metrics.location
+# Required: Yes (if metrics.kafka-report-enabled is true)
+#
+# Typically, this is a data center, region, or other similar designation. You are free to encode
+# hierarchical information in this value by separating components with slashes.
+#
+# Ex.
+# metrics.location = nyc-1/zone-2/rack-12
+###################################################################################################
+# Name: metrics.service
+# Required: Yes (if metrics.kafka-report-enabled is true)
+#
+# The name of the service producing metric data (this service).
+#
+# Ex.
+# metrics.service = rocana-search
+###################################################################################################
+# Name: metrics.kafka-report-frequency
+# Required: No
+# Default: 5 (seconds)
+#
+# The frequency at which metrics are output to Kafka, in seconds. If this value is zero or less,
+# reporting metrics to Kafka will be disabled.
+#
+# Ex.
+# metrics.kafka-report-frequency = 30
+###################################################################################################
+# Name: metrics.log-report-frequency
+# Required: Yes
+#
+# The frequency at which metrics are output to the consumer logs, in seconds. If this
+# value is 0, then there will not be any metrics output to the logs.
+#
+# Ex.
+metrics.log-report-frequency = {{ metrics_report_frequency }}
+###################################################################################################
+# Name: admin.server.bind-address
+# Required: No
+# Default: 0.0.0.0
+#
+# The IP or hostname to which the admin HTTP service should bind. If set to
+# 0.0.0.0 (wildcard), the server will bind to all available interfaces.
+#
+# Ex.
+# admin.server.bind-address = localhost
+#
+# Ex.
+# admin.server.bind-address = consumer1234.rocana.com
+###################################################################################################
+# Name: admin.server.port
+# Required: Yes
+# Default: 17319
+#
+# The port to which the admin HTTP service should bind.
+#
+# Ex.
+admin.server.port = 17319
+###################################################################################################
+
+query.coordinator.max.query.limit = 100000

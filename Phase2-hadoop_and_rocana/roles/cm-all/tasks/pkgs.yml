@@ -1,0 +1,32 @@
+---
+
+- name: "** install JDK ** ensure jdk is installed on hadoop hosts."
+  yum: name={{ jdk_package_name }} state=latest
+  tags: install-cm-agent
+  
+- name: "** cm-all ** install Cloudera Manager agent packages"
+  yum: name={{ item }} state=latest
+  with_items:
+    - cloudera-manager-agent
+    - cloudera-manager-daemons
+  tags: install-cm-agent
+
+# commenting for now. changes to CM require some fixes
+# TODO test with new CM parcel distribution system (flood)
+
+#- name: "** cm-all ** ensure parcel cache directory exists"
+#  file: path=/opt/cloudera/parcel-cache owner=root group=root mode=0755 state=directory
+#  tags: install-cm-agent
+
+#- name: "** cm-all ** check for CDH parcel already staged on host"
+#  stat: path=/opt/cloudera/parcel-cache/CDH-{{ cdh_parcel_version }}-el{{ ansible_distribution_major_version }}.parcel
+#  register: cdh_cache_parcel
+#  tags: install-cm-agent
+
+#- name: "** cm-all ** stage CDH parcel to reduce overall installation time"
+#  get_url: url={{ cdh_parcel_repo_url }}/CDH-{{ cdh_parcel_version }}-el{{ ansible_distribution_major_version }}.parcel
+#           dest=/opt/cloudera/parcel-cache/CDH-{{ cdh_parcel_version }}-el{{ ansible_distribution_major_version }}.parcel
+#           timeout=30
+#  ignore_errors: yes
+#  when: cdh_cache_parcel.stat.exists == False
+#  tags: install-cm-agent

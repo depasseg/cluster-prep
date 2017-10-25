@@ -1,0 +1,30 @@
+---
+# rocana-search
+
+- name: "** rocana search ** deploy search commands.d file"
+  template: src=configs/{{ cluster_name }}/commands.d/rocana-search.j2
+            dest=/etc/rocana-ops/commands.d/rocana-search
+            owner=rocana
+            group=rocana
+            mode=0755
+  tags: configure-rocana
+
+- name: "** rocana search ** deploy search configuration file"
+  template: src=configs/{{ cluster_name }}/rocana-search/search.properties.j2
+            dest=/etc/rocana-ops/rocana-search/search.properties
+            owner=rocana
+            group=rocana
+            mode=0644
+  tags: configure-rocana
+
+- name: "** rocana search ** deploy search partition strategy file"
+  template: src=configs/{{ cluster_name }}/rocana-search/partition-strategy.json.j2
+            dest=/etc/rocana-ops/rocana-search/partition-strategy.json
+            owner=rocana
+            group=rocana
+            mode=0644
+  tags: configure-rocana
+
+- name: "** rocana search ** start and chkconfig on rocana-search-server"
+  service: name=rocana-search state=restarted enabled=no
+  tags: configure-rocana

@@ -1,0 +1,52 @@
+---
+
+
+#############################################################################################
+#                                   Rocana Anaytics                                         #
+#############################################################################################
+#this is a bit overkill, but just want to make sure those directories exist
+
+- name: "** rocana analytics ** create HDFS directories for impala udfs. This will ignore errors."
+  shell: su -l hdfs -c '{{ item }}'
+  with_items:
+    - hadoop fs -mkdir /user/impala
+    - hadoop fs -mkdir /user/impala/udfs
+    - hadoop fs -chown impala:impala /user/impala
+    - hadoop fs -chown impala:impala /user/impala/udfs
+  ignore_errors: yes
+  tags: configure-rocana
+
+- name: "** rocana analytics ** check for udfs in HDFS"
+  shell: hadoop fs -ls /user/impala/udfs
+  register: rocana_udf
+  tags: configure-rocana
+
+- name: "** rocana analytics ** deploy impala UDF to HDFS"
+  shell: su -l hdfs -c 'hadoop fs -put /opt/rocana/rocana-{{ rocana_version }}/lib/rocana-tools/com.rocana-rocana-impala-udfs-1.0.0-linux-x86_64-rhel.so /user/impala/udfs/librocana-udfs.so'
+  when: rocana_udf.stdout.find('librocana-udfs.so') == -1
+  tags: configure-rocana
+
+- name: "** rocana analytics ** chown impala UDF to be owned by impala"
+  shell: su -l hdfs -c 'hadoop fs -chown impala:impala /user/impala/udfs/librocana-udfs.so'
+  tags: configure-rocana
+
+- name: "** rocana analytics ** deploy analytics configuration file"
+  template: src=configs/{{ cluster_name }}/commands.d/rocana-analytics.j2
+            dest=/etc/rocana-ops/commands.d/rocana-analytics
+            owner=rocana
+            group=rocana
+            mode=0644
+  tags: configure-rocana
+
+
+- name: "** rocana analytics ** deploy analytics configuration file"
+  template: src=configs/{{ cluster_name }}/rocana-analytics/analytics-consumer.properties.j2
+            dest=/etc/rocana-ops/rocana-analytics/analytics-consumer.properties
+            owner=rocana
+            group=rocana
+            mode=0600
+  tags: configure-rocana
+
+- name: "** rocana analytics ** start and chkconfig on rocana-analytics"
+  service: name=rocana-analytics state=restarted enabled=yes
+  tags: configure-rocana

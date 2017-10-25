@@ -1,0 +1,6 @@
+---
+
+- name: "** impala ** copy impala-hdp.repo template to /etc/yum.repos.d/"
+  template: src=impala-hdp.repo.j2 dest=/etc/yum.repos.d/impala-hdp.repo owner=root group=root mode=0644
+  tags: deploy-impala-hdp-repo
+

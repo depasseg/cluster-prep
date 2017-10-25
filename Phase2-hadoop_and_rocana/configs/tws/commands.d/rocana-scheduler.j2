@@ -1,0 +1,30 @@
+#!/bin/sh
+
+#setting java home
+export JAVA_HOME="{{ java_jdk_home }}"
+
+command_project="rocana-scheduler"
+command_type="java"
+command_java_opts="-Djava.net.preferIPv4Stack=true"
+
+# Edit this to change the server port
+command_java_opts="${command_java_opts} -Dserver.port=17331"
+
+# Uncomment to increase the permgen size if the scheduler runs out of memory. For Java 7 and below only
+command_java_opts="${command_java_opts} -XX:MaxPermSize=1024m"
+
+# Uncomment if running on an HDP cluster, and change to your HDP version
+#hdp_version=2.3.4.7-4
+
+# Uncomment the following lines if you are running on an HDP cluster.
+#command_java_opts="${command_java_opts} -Dhdp.version=${hdp_version}
+#export SPARK_DIST_CLASSPATH=/usr/hdp/${hdp_version}/hadoop/*:/usr/hdp/${hdp_version}/hive/lib/*:/usr/hdp/${hdp_version}/hadoop-mapreduce/*
+
+# Uncomment the following line if this server is managed by Cloudera Manager and is assigned as a Hive gateway
+# In some HDP installations, these paths will also work.  If they do not exist, see the HDP instructions below
+CLASSPATH=${CLASSPATH}:/etc/hive/conf:/etc/hadoop/conf
+
+# Uncomment the following line if your system is HDP and the above paths do not exist
+#CLASSPATH=${CLASSPATH}:/usr/hdp/${hdp_version}/hive-client/conf:/usr/hdp/${hdp_version}/hadoop-client/conf
+
+command_java_main="com.rocana.scheduler.RocanaSchedulerApp"

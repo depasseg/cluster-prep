@@ -1,0 +1,19 @@
+---
+
+- name: "** rocana common ** create /opt/rocana and ensure it has the correct permissions"
+  file: path=/opt/rocana owner=rocana group=rocana mode=0755
+  tags: configure-rocana
+
+# deploy event-producer commands.d file
+- name: "** rocana common ** deploy event-producer.properties configuration file"
+  template: src=configs/{{ cluster_name }}/rocana-common/event-producer.properties.j2 dest=/etc/rocana-ops/event-producer.properties owner=rocana group=rocana mode=0644
+  tags:
+    - configure-rocana
+    - rocana-event-producer
+
+# deploy event-producer configuration file
+- name: "** rocana common ** deploy event-producer.properties configuration file"
+  template: src=configs/{{ cluster_name }}/rocana-common/event-producer.properties.j2 dest=/etc/rocana-ops/event-producer.properties owner=rocana group=rocana mode=0644
+  tags:
+    - configure-rocana
+    - rocana-event-producer

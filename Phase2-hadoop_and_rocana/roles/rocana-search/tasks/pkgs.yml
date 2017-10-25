@@ -1,0 +1,9 @@
+---
+
+# Rocana search packages
+- name: "** rocana ** install rocana search and diagnostic packages"
+  yum: name={{ item }} state=latest
+  with_items:
+    - rocana-search
+    - rocana-diag-bundle
+  tags: install-rocana

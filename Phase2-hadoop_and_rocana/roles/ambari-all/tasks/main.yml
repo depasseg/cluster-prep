@@ -1,0 +1,5 @@
+---
+
+- include: repos.yml
+- include: pkgs.yml
+- include: ambari-agent.yml

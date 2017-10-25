@@ -1,0 +1,33 @@
+{
+  processes: {
+    agent: {
+      pid-file: "${ROCANA_HOME}/run/rocana-agent.pid"
+      binary: "${ROCANA_HOME}/bin/rocana-agent"
+      args: ["--supervised", "${ROCANA_HOME}/state/rocana-agent"]
+      configuration: {
+        directory: "${ROCANA_HOME}/state/rocana-agent"
+        file: "agent.conf"
+      }
+    }
+  }
+  kafka-consumer: {
+    brokers: "{{ kafka_brokers }}"
+    commands-topic: "commands"
+    command-signing-keys: [
+      "{{ pubkey.stdout }}"
+    ]
+  }
+  checkpoint-db: {
+    data-location: "${ROCANA_HOME}/state/rocana-supervisor/checkpoint-db"
+  }
+  kafka: {
+    brokers: "{{ kafka_brokers }}"
+    events-topic: "events"
+  }
+
+  internal-metrics: {
+    logging: {
+      enabled: false
+    }
+  }
+}

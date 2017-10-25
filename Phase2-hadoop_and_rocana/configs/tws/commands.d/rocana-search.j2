@@ -1,0 +1,63 @@
+#!/bin/sh
+
+#setting java home
+export JAVA_HOME="{{ java_jdk_home }}"
+
+command_project="rocana-search"
+command_type="java"
+command_java_opts="-Djava.net.preferIPv4Stack=true"
+
+# Specify heap size
+command_java_opts="${command_java_opts} \
+-Xms{{ rocana_search_heap_size }} \
+-Xmx{{ rocana_search_heap_size }}"
+
+# Use G1 GC
+command_java_opts="${command_java_opts} \
+-XX:+UseG1GC \
+-XX:-ResizePLAB \
+-XX:+ParallelRefProcEnabled \
+-XX:+AlwaysPreTouch \
+-XX:MaxGCPauseMillis=1500 \
+-XX:ParallelGCThreads=16 \
+-XX:+UnlockExperimentalVMOptions \
+-XX:G1HeapWastePercent=2 \
+-XX:G1MixedGCLiveThresholdPercent=85 \
+-XX:InitiatingHeapOccupancyPercent=35 \
+-XX:G1ReservePercent=30"
+
+# Uncomment to use more off-heap memory. Only needed when there's
+# a startup error that it's too small. Minimum value should be
+# the same number as query.blockcache.off-heap-mb, defined in
+# /etc/rocana-ops/rocana-search/search.properties
+command_java_opts="${command_java_opts} -XX:MaxDirectMemorySize=32768m"
+
+# uncomment once you set the correct path to Hadoop Native libraries - see RocanaOps RefGuide for more info
+# /usr/hdp/<version>/hadoop/lib/native for HDP
+# /opt/cloudera/parcels/CDH/lib/hadoop/lib/native for CDH parcel installs
+# /usr/lib/hadoop/lib/native for CDH RPM installs.
+command_java_opts="${command_java_opts} -Djava.library.path=/opt/cloudera/parcels/CDH/lib/hadoop/lib/native"
+
+# Uncomment to dump heap to file on OOM error
+#command_java_opts="${command_java_opts} -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=$ROCANA_HOME/logs"
+
+# Uncomment to log GC usage to $ROCANA_HOME/logs/rocana-search.gc.log
+command_java_opts="${command_java_opts} \
+-Xloggc:$ROCANA_HOME/logs/rocana-search.gc.log \
+-XX:+PrintGCDetails \
+-XX:+PrintGCDateStamps \
+-XX:+PrintReferenceGC \
+-XX:+PrintAdaptiveSizePolicy \
+-XX:+PrintGCApplicationStoppedTime \
+-XX:+PrintHeapAtGC \
+-XX:+UseGCLogFileRotation \
+-XX:NumberOfGCLogFiles=10 \
+-XX:GCLogFileSize=16M"
+
+# Uncomment if you are using Kerberos
+#command_java_opts="${command_java_opts} -Djava.security.auth.login.config=$ROCANA_CONF_DIR/jaas-client.conf"
+
+# Uncomment if using HA Namenode. You may also need it when using Kerberos on some distributions.
+CLASSPATH=${CLASSPATH}:/etc/hive/conf:/etc/hadoop/conf
+
+command_java_main="com.rocana.search.server.SearchApp"

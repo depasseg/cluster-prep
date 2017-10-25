@@ -1,0 +1,32 @@
+---
+
+#############################################################################################
+#                                   Rocana Metadata Consumer                                #
+#############################################################################################
+
+- name: "** rocana metadata consumer ** deploy metadata consumer commands.d file"
+  template: src=configs/{{ cluster_name }}//commands.d/rocana-metadata-consumer.j2
+            dest=/etc/rocana-ops/commands.d/rocana-metadata-consumer
+            owner=rocana
+            group=rocana
+            mode=0644
+  tags:
+    - configure-rocana
+    - rocana-metadata-consumer
+
+- name: "** rocana metadata consumer ** deploy metadata consumer configuration file"
+  template: src=configs/{{ cluster_name }}//rocana-metadata-consumer/metadata-consumer.properties.j2
+            dest=/etc/rocana-ops/rocana-metadata-consumer/metadata-consumer.properties
+            owner=rocana
+            group=rocana
+            mode=0600
+  tags:
+    - configure-rocana
+    - rocana-metadata-consumer
+
+- name: "** rocana metadata consumer ** start and chkconfig on rocana-metadata-consumer"
+  service: name=rocana-metadata-consumer state=restarted enabled=yes
+  tags:
+    - configure-rocana
+    - rocana-metadata-consumer
+

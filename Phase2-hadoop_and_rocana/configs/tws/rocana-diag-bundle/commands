@@ -1,0 +1,44 @@
+#
+# The output of these commands will be collected in diagnostic bundles.
+#
+# Lines beginning with spaces or hashes are ignored, in addition to empty lines.
+#
+
+$ROCANA_BIN_DIR/rocana-env
+alternatives_display_all
+df -a
+diag_bundle_format_version
+dmesg
+env
+free
+hostname
+id
+id sd
+id rocana
+ifconfig -a
+iptables -nvL
+iptables -t nat -nvL
+java -version
+ls -la /usr/java
+mailq
+mount
+netstat -nl
+netstat -nr
+ps -ef
+rpm -qa
+dpkg -l
+type -p java
+uname -a
+uptime
+yum_repo_files
+mpstat -P ALL 1 1
+df -P -k
+df -P -k -i
+iostat -d 1 2 -x -k
+analyze_agent_files
+collect_profile
+collect_perf
+collect_strace
+curl --output agent.metrics.json "http://localhost:17313/metrics?pretty=true"
+ulimit -a
+collect_rocana_search_info

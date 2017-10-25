@@ -1,0 +1,109 @@
+---
+
+- name: "** rocana configuration ** create HDFS directories"
+  shell: su -l hdfs -c '{{ item }}'
+  with_items:
+    - hdfs dfs -mkdir /user/rocana
+    - hdfs dfs -chown rocana:rocana /user/rocana
+    - hdfs dfs -mkdir /datasets
+    - hdfs dfs -chown hdfs:hdfs /datasets
+    - hdfs dfs -chmod 1777 /datasets
+    - hdfs dfs -mkdir /datasets/rocana
+    - hdfs dfs -chown rocana:rocana /datasets/rocana
+    - hdfs dfs -chmod 750 /datasets/rocana
+  ignore_errors: yes
+  tags:
+    - configure-rocana
+    - create-hdfs-dirs
+
+- name: "** rocana configuration ** create Alerting and Scheduler HDFS directories"
+  shell: su -l rocana -c '{{ item }}'
+  with_items:
+    - hdfs dfs -mkdir /user/rocana/sparkEvents
+    - hdfs dfs -mkdir /user/rocana/rules-engine-checkpoint
+    - hdfs dfs -mkdir /user/rocana/action-engine-checkpoint
+  ignore_errors: yes
+  tags:
+    - configure-rocana
+    - create-hdfs-dirs
+
+#############################################################################################
+#                             Rocana Repos section                                          #
+#############################################################################################
+
+- name: "** rocana configuration ** deploy rocana-data commands.d file"
+  template: src=configs/{{ cluster_name }}/commands.d/rocana-data.j2
+            dest=/etc/rocana-ops/commands.d/rocana-data
+            owner=rocana
+            group=rocana
+            mode=0644
+  tags:
+    - configure-rocana
+    - create-rocana-repos
+
+- name: "** rocana configuration ** check for metrics and anomalies repos and register results."
+  shell: su -l rocana -c 'rocana-data list --repo "{{ metrics_repo }}"'
+  register: rocana_hive_repos
+  tags:
+    - configure-rocana
+    - create-rocana-repos
+
+- name: "** rocana configuration ** creating events repo in hdfs"
+  shell: su -l rocana -c 'rocana-data create --repo "{{ events_repo }}" --name events --namespace {{ rocana_namespace }}'
+  when: rocana_hive_repos.stdout.find('events') == -1
+  tags:
+    - configure-rocana
+    - create-rocana-repos
+
+- name: "** rocana configuration ** configure metrics hive table"
+  shell: su -l rocana -c 'rocana-data create-metric --name metrics --repo "{{ metrics_repo }}" --namespace {{ rocana_namespace }}'
+  when: rocana_hive_repos.stdout.find('metrics') == -1
+  tags:
+    - configure-rocana
+    - create-rocana-repos
+
+- name: "** rocana configuration ** configure anomalies hive table"
+  shell: su -l rocana -c 'rocana-data create-anomalies --name anomalies --repo "{{ anomalies_repo }}" --namespace {{ rocana_namespace }}'
+  when: rocana_hive_repos.stdout.find('anomalies') == -1
+  tags:
+    - configure-rocana
+    - create-rocana-repos
+
+- name: "** rocana configuration ** update kite cache for repositories"
+  shell: su -l rocana -c '/usr/bin/kite-dataset update {{ item }}  --set kite.writer.cache-size=200 --namespace {{ rocana_namespace }}'
+  with_items:
+      - metrics
+      - events
+      - anomalies
+  when: hadoop_distribution|upper == 'CDH'
+  ignore_errors: yes
+  tags:
+      - configure-rocana
+      - create-rocana-repos
+
+#############################################################################################
+#                             Kafka Topics section                                          #
+#############################################################################################
+
+- name: "** rocana configuration ** check for kafka topics"
+  shell: "{{ kafka_topics_command }} --list --zookeeper {{ zookeeper_quorum }}"
+  register: rocana_kafka_topics
+  tags:
+    - configure-rocana
+    - create-kafka-topics
+
+- name: "** rocana configuration ** create all kafka topics"
+  shell: su -l rocana -c '{{ kafka_topics_command }} --create --zookeeper {{ zookeeper_quorum }} --replication-factor {{ all_kafka_topics[item]['replication_factor'] }} --partitions {{ all_kafka_topics[item]['partitions'] }} --topic {{ item }}'
+  with_items:
+    - "{{ all_kafka_topics.keys() }}"
+  when: rocana_kafka_topics.stdout.find(item) == -1
+  tags:
+    - configure-rocana
+    - create-kafka-topics
+
+- name: "** rocana configuration ** fortify event kafka topics"
+  shell: su -l rocana -c '{{ kafka_topics_command }} --alter --topic events --zookeeper {{ zookeeper_quorum }} --config min.insync.replicas={{ events_min_in_sync_replicas | int }}'
+  when: rocana_kafka_topics.stdout.find('events') == -1
+  tags:
+    - configure-rocana
+    - create-kafka-topics

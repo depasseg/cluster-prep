@@ -1,0 +1,16 @@
+---
+
+# install kafka binaries (need to fix this in ambari section?
+- name: "** rocana ** install kafka binaries on rocana consumer server for HDP 2.3"
+  shell: yum install kafka_2_3* -y
+  when: hadoop_distribution|upper == 'HDP'
+  tags: install-rocana
+
+# Rocana Packages
+- name: "** rocana ** install rocana consumer packages"
+  yum: name={{ item }} state=latest
+  with_items:
+    - rocana-diag-bundle
+    - rocana-tools
+    - rocana-analytics
+  tags: install-rocana

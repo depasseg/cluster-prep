@@ -1,0 +1,4 @@
+rocana   soft   nproc    65536
+rocana   hard   nproc    unlimited
+rocana   soft   nofile   32000
+rocana   hard   nofile   1048576

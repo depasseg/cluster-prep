@@ -1,0 +1,48 @@
+{
+  "engine": {
+    "streaming": {
+      "checkpoint-dir": "hdfs://{{ hdfs_root[hdfs_ha] }}/user/rocana/rules-engine-checkpoint"
+    },
+    "spark": {
+      "yarn.historyServer.address": "{{ groups['rocana-webapp'][0] }}:10020",
+      "history.fs.logDirectory": "hdfs://{{ hdfs_root[hdfs_ha] }}/user/rocana/sparkEvents",
+      "eventLog.dir": "hdfs://{{ hdfs_root[hdfs_ha] }}/user/rocana/sparkEvents",
+      "yarn.jar": "hdfs://{{ hdfs_root[hdfs_ha] }}/user/rocana/rocana-spark-assembly-{{ spark_version }}-hadoop2.2.0-{{rocana_version}}.jar",
+      "locality.wait": "0",
+      "driver.extraJavaOptions": "-XX:+UseG1GC -XX:+PrintFlagsFinal -XX:+PrintReferenceGC -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCTimeStamps -XX:+PrintAdaptiveSizePolicy -XX:+UnlockDiagnosticVMOptions -XX:+G1SummarizeConcMark",
+      "executor.extraJavaOptions": "-XX:+UseG1GC -XX:+PrintFlagsFinal -XX:+PrintReferenceGC -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCTimeStamps -XX:+PrintAdaptiveSizePolicy -XX:+UnlockDiagnosticVMOptions -XX:+G1SummarizeConcMark",
+      "executor.memory": "{{ rules_engine_executor_memory }}"
+    },
+    "scheduler": {
+      "url": "http://{{ groups['rocana-webapp'][0] }}:17331",
+      "scratch-dir": "/tmp",
+      "spark-uber-jar": "/opt/rocana/rocana-{{ rocana_version }}/spark-lib/rocana-rules-engine/com.rocana-rocana-rules-engine-{{ rocana_version }}-shaded.jar",
+      "spark-log4j-file": "/etc/rocana-ops/spark-log4j.properties",
+      "restart-on-error": true,
+      "max-restart-attempts": 5
+
+    },
+    "kafka": {
+      "topic": "events",
+      "brokers": "{{ kafka_brokers }}",
+      "producer": {}
+    }
+  },
+  "rules": [],
+  "datasets": {
+    "hdfs-datasets": [],
+    "kafka-streams": [{
+      "topic": "events",
+      "schema-url": "resource:com/rocana/event/Event.avsc",
+      "name": "events",
+      "brokers": "{{ kafka_brokers }}",
+      "encoding": "AVRO"
+    }, {
+      "topic": "events",
+      "schema-url": "resource:com/rocana/metric/MetricAggregate.avsc",
+      "name": "metrics",
+      "brokers": "{{ kafka_brokers }}",
+      "encoding": "AVRO"
+    }]
+  }
+}
