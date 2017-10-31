@@ -13,7 +13,7 @@
       root:
         state: present
         group: root
-        key: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDsevMuW38QEFhELve0n6M/bsuNMhysgJElUUfwzYrphkhZAXtDOZwNDT/94cHmwvxgRfcbUHuwnIP51G3kH7nqQG/ST4rqwOpiLzrYBfaKMawtElQe2cVUWRA1eb6MHBpdD6DZ0rNgDLLD3VCZ82VW/5AD1kkkaBZzB40WkbPk7/82szkIndM2m1kaKFH5FsuYORXTJB41tio7YKRwePIaBdS9y3p4CIQ84kWKAaldhiBX6nygI4pNDQKzcJLtgLpgidNt63bE2BPzXIbA8PLvsZW8AdZVVgvVCC9k92J9O/k8PK4gJQgDtCOZ1iGa3D+KPIqo0kXWF/gVUv7ncIt1 paul@ip-10-172-1-36.us-west-2.compute.internal"
+        key: "ssh-rsa AAAAB3NzaIt1 root@1.compute.internal"
 
   tasks:
     - name: "** aws prep ** check for epel repo"
