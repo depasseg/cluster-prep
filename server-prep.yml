@@ -17,12 +17,13 @@
         regexp="^{{ ansible_default_ipv4.address }}.+$"
         line="{{ ansible_default_ipv4.address }} {{ ansible_fqdn }} {{ ansible_hostname }}"
         
-     - name: "** Ensure curl, net-tools, ntp, wget are installed **"
+     - name: "** Ensure curl, net-tools, ntp, wget and tmux are installed **"
         yum: name=bind-utils state=installed
         yum: name=curl state=installed
         yum: name=net-tools state=installed
         yum: name:ntp state=installed
         yum: name=wget state=installed
+        yum: name=tmux state=installed
         
     - name: "** Ensure Firewalld isn't running and is disabled on boot"
       service:
