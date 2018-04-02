@@ -1,0 +1,96 @@
+---
+
+- hosts: all
+  gather_facts: yes
+  become: true
+  tasks:
+    - name: "** server prep ** disable selinux"
+      selinux: state=disabled
+      
+    - name: Ensure hostname set
+      hostname: name={{ inventory_hostname }}
+      when: not inventory_hostname|match('(\d{1,3}\.){3}\d{1,3}')
+            
+     - name: "** Ensure hostname is in /etc/hosts **"
+      lineinfile:
+        dest=/etc/hosts
+        regexp="^{{ ansible_default_ipv4.address }}.+$"
+        line="{{ ansible_default_ipv4.address }} {{ ansible_fqdn }} {{ ansible_hostname }}"
+        
+     - name: "** Ensure curl, net-tools, ntp, wget are installed **"
+        yum: name=bind-utils state=installed
+        yum: name=curl state=installed
+        yum: name=net-tools state=installed
+        yum: name:ntp state=installed
+        yum: name=wget state=installed
+        
+    - name: "** Ensure Firewalld isn't running and is disabled on boot"
+      service:
+        name: firewalld
+        state: started
+        enabled: no
+        
+     - name: "** Ensure NetworkManager isn't running and is disabled on boot"
+      service:
+        name: networkmanager
+        state: started
+        enabled: no
+     - name: Add the 802.1q module
+       modprobe:
+         name: 8021q
+         state: present
+      - name: Add the bonding module
+       modprobe:
+         name: bonding
+         state: present
+     - name: Add the bridge module
+       modprobe:
+         name: bridge
+         state: present
+     - name: Add the tun module
+       modprobe:
+         name: tun
+         state: present
+     - name: Add the br_netfilter module
+       modprobe:
+         name: br_netfilter
+         state: present    
+           
+ - hosts: robin
+     - name: "** server prep ** copy /etc/hosts file to machines"
+       copy: src=etc.hosts.robin dest=/etc/hosts owner=root group=root mode=0644
+       
+ - hosts: p9
+     - name: "** server prep ** copy /etc/hosts file to machines"
+       copy: src=etc.hosts.p9 dest=/etc/hosts owner=root group=root mode=0644    
+     - name: Add Platform9 YUM repository
+       yum_repository:
+         name: platform9
+         description: Platform9 YUM repo
+         baseurl: https://s3-us-west-1.amazonaws.com/platform9-neutron/noarch/platform9-neutron-repo-1-0.noarch.rpm
+#     - name: # Add specified repository into sources list.
+#        - apt_repository:
+#            repo: deb http://archive.somethinging.com/ubuntu hardy partner
+#            state: present
+
+       
+ 
+    
+ - hosts: R730s
+   tasks:
+    - name: "** server prep ** format drives"
+      filesystem: fstype=xfs dev=/dev/{{ item }}
+      with_items:
+       - sda
+       - sdb
+       - sdc
+       - sdd
+       - sde
+       - sdf
+       - sdg
+       - sdh
+       - sdi
+       - sdj
+       - sdk
+       - sdl
+       
