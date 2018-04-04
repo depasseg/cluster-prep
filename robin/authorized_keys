@@ -1,0 +1,9 @@
+authorized_keys
+ubuntu@p9-node1:~/.ssh$ more authorized_keys 
+ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC6AXxf/DNqyvmnPPQTY/6efm
+y1wA5KeuUWhLUcrIM6H68PG84AmVXVBRlw4TdUWXjnBTlhS/kBTMvCCRcu9MbQ
+KWofJ3Edcu+ukPmm3EUy/Iv7rpB/gw0rc6EPr2e0YrKSSFQP5E0Sg09JQN0Xtu
+6bN07+CPlBxDxQrN5Ov0+w4ErdmEpbAgRMxF0ySc38ye8shO6fxY/mGYde4L/+
+z3bSFg80+pSHOcnnNRAqXPO5MzR/9icxXpy+imWGprRUcxSC1ftDchq1LOnAtE
+8OdFHXIovOX76NLHyRVTE1CCnNRgZzkwFCfu56BZ+CbG6djLKl5d0Ic1+3j2cv
+PAn+PB2Z
