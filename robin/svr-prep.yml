@@ -1,0 +1,118 @@
+---
+
+- hosts: all
+  gather_facts: yes
+  become: true
+  tasks:
+    - name: "** server prep ** disable selinux"
+      selinux: state=disabled
+
+    - name: Ensure hostname set
+      hostname: name={{ inventory_hostname }}
+      when: not inventory_hostname|match('(\d{1,3}\.){3}\d{1,3}')
+
+    - name: "** Ensure hostname is in /etc/hosts **"
+      lineinfile:
+        dest=/etc/hosts
+        regexp="^{{ ansible_default_ipv4.address }}.+$"
+        line="{{ ansible_default_ipv4.address }} {{ ansible_fqdn }} {{ ansible_hostname }}"
+
+    - name: "** server prep ** copy /etc/hosts file to machines"
+      copy: src=etc.hosts.robin dest=/etc/hosts owner=root group=root mode=0644
+
+
+    - name: "** Ensure curl, net-tools, ntp, wget and tmux are installed **"
+      yum: name=bind-utils state=installed
+
+    - name: "** Ensure curl, net-tools, ntp, wget and tmux are installed **"
+      yum: name=curl state=installed
+
+    - name: "** Ensure curl, net-tools, ntp, wget and tmux are installed **"
+      yum: name=net-tools state=installed
+
+    - name: "** Ensure curl, net-tools, ntp, wget and tmux are installed **"
+      yum: name=ntp state=installed
+
+    - name: "** Ensure curl, net-tools, ntp, wget and tmux are installed **"
+      yum: name=wget state=installed
+
+    - name: "** Ensure curl, net-tools, ntp, wget and tmux are installed **"
+      yum: name=tmux state=installed
+#    - name: Disable networkmanager
+#      service: name=networkmanager state=stopped enabled=no
+
+#    - name: Disable firewalld
+#      service: name=firewalld state=stopped enabled=no
+
+
+#    - name: "** Ensure Firewalld isn't running and is disabled on boot"
+#      service:
+#        name: firewalld
+#        state: started
+#        enabled: no
+#
+#    - name: "** Ensure NetworkManager isn't running and is disabled on boot"
+#      service:
+#        name: networkmanager
+#        state: started
+#        enabled: no
+
+    - name: Add the 802.1q module
+      modprobe :
+         name: 8021q
+         state: present
+    - name: Add the bonding module
+      modprobe :
+         name: bonding
+         state: present
+    - name: Add the bridge module
+      modprobe :
+         name: bridge
+         state: present
+    - name: Add the tun module
+      modprobe :
+         name: tun
+         state: present
+    - name: Add the br_netfilter module
+      modprobe :
+         name: br_netfilter
+         state: present
+#    - name: Delete existing bond0
+#      path: /etc/sysconfig/network-scripts/ifcfg-bond0
+#      state: absent
+
+#    - name: Delete existing eno1
+#      path: /etc/sysconfig/network-scripts/ifcfg-eno1
+#      state: absent
+
+#    - name: Delete existing eno2
+#      path: /etc/sysconfig/network-scripts/ifcfg-eno2
+#      state: absent
+
+#    - name: Create bond0 conf file in /etc/sysconfig/network-scripts/
+#      lineinfile:  dest=etc/sysconfig/network-scripts/ifcfg-bond0
+#                   regexp='^'
+#                   line='DEVICE=bond0\nTYPE=Bond\nNAME=bond0\nBONDING-MASTER=yes\nBOOTPROTO=dhcp\nONBOOT=yes\nPEERDNS=yes\PERSISTENT_DHCLIENT=1\nBONDING_OPTS="mode=5 miimon=100 primary=eno1"'
+#                   create=true
+
+#    - name: Create primary interface eno1 configuration file for bond in /etc/sysconfig/network-scripts/
+#      lineinfile: dest=etc/sysconfig/network-scripts/ifcfg-eno1
+#                  regexp='^'
+#                  line='TYPE=Ethernet\nNM_CONTROLLED=no\USERCTL=yes\mHWADDR={{ansible_eno1.macaddress}}\nONBOOT=yes\BOOTPROTO=none\nPEERDNS=yes\MASTER=bond0\SLAVE=yes'
+#                  create=true
+
+#    - name: Create primary interface eno2 configuration file for bond in /etc/sysconfig/network-scripts/
+#      lineinfile: dest=etc/sysconfig/network-scripts/ifcfg-eno2
+#                  regexp='^'
+#                  line='TYPE=Ethernet\nNM_CONTROLLED=no\USERCTL=yes\mHWADDR={{ansible_eno2.macaddress}}\nONBOOT=yes\BOOTPROTO=none\nPEERDNS=yes\MASTER=bond0\SLAVE=yes'
+#                  create=true
+
+
+
+#- hosts: robin
+#  become: true
+#  tasks:
+
+    - name: "** server prep ** copy /etc/hosts file to machines"
+      copy: src=etc.hosts.robin dest=/etc/hosts owner=root group=root mode=0644
+
