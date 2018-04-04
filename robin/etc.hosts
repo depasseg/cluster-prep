@@ -1,0 +1,8 @@
+
+127.0.0.1 localhost.localdomain localhost
+10.242.1.191 rs-node1.maas.pigpen.xyz rs-node1
+10.242.1.195 rs-node2.maas.pigpen.xyz rs-node2
+10.242.1.203 rs-node3.maas.pigpen.xyz rs-node3
+10.242.1.202 rs-node4.maas.pigpen.xyz rs-node4
+10.242.1.163 rs-node5.maas.pigpen.xyz rs-node5
+10.242.1.162 rs-node6.maas.pigpen.xyz rs-node6
